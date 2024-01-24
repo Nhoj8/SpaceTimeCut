@@ -16,6 +16,7 @@ using System.Globalization;
 using System.Linq;
 //using CellGame;
 using System.Collections.ObjectModel;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SpaceTimeCut
 {
@@ -67,18 +68,22 @@ namespace SpaceTimeCut
         Texture2D pixel;
 
         public static Texture2D circle, circletransparent;
-        public static Button[] Buttons;
-
+        //public static Button[] Buttons;
+        Button playButton;
+        Button settingsButton;
+        Button resetButton;
+        Button levelSelectButton;
         //Position Anchors
         Texture2D[] Blocks8x8;
-        Texture2D[] Barriers;
         public static Texture2D[] BlocksTexture;
+        //public static Texture2D[] PlayerTexture;
+        public static Texture2D[][] EntityTextures;
+        //public static Texture2D[] PushableEntityTexture;
         public static Texture2D[] BarrierTexture;
-        public static Times[] times;
-        //public static Level[] level;
+        //public static Level[] grids;
         public static int blocksize;
         //public static System.Windows.Forms.Cursor Hand { get; }
-
+        Level level;
 
 
         Boolean MainMenuInitilised = false;
@@ -229,15 +234,15 @@ namespace SpaceTimeCut
         }
         protected override void Update(GameTime gameTime)
         {
-            // TODO: Add your update logic here
+            // TODO: Add your Update logic here
 
             if (screensizechanged)
                 RedoScreenVars();
             
             mouseState = Mouse.GetState();
-            MousePosition = new Point(mouseState.X, mouseState.Y);   
+            MousePosition = new Point(mouseState.X, mouseState.Y);
 
-
+            ref Button[] Buttons = ref Button.Buttons;
             if (CurrentlyDisplaying == MAINMENU)
             {
                 if (!MainMenuInitilised)
@@ -247,12 +252,14 @@ namespace SpaceTimeCut
                     MouseLeftPressed = false;
                 if (mouseState.LeftButton == ButtonState.Pressed && !MouseLeftPressed)
                 {
+                    
                     MouseLeftPressed = true;
                     for (int b = 0; b < Buttons.Count(); b++)
                     {
                         if (Buttons[b] != null &&Buttons[b].Selected)
                         {
-                            Button.Click(b);
+                            Buttons[b].Click();
+                           
                         }
                     }
                 }
@@ -263,35 +270,54 @@ namespace SpaceTimeCut
             {
                 blocksize = 32;
 
-                times = new Times[1];
-                times[0] = new Times();
-                times[0].initilize();
-                //times[0].initilize();
+                level = new Level(blocksize);
+                //times[0].Initilize();
                 Blocks8x8 = new Texture2D[6];
-                Blocks8x8[1] = Content.Load<Texture2D>("Blocks/Stone");
-                Blocks8x8[2] = Content.Load<Texture2D>("Blocks/Dirt");
-                Blocks8x8[3] = Content.Load<Texture2D>("Blocks/Clay");
-                Blocks8x8[4] = Content.Load<Texture2D>("Blocks/Ore");
-                Blocks8x8[5] = Content.Load<Texture2D>("Blocks/Corruption");
+                Blocks8x8[1] = Content.Load<Texture2D>("NewBlocks/Block");
+                Blocks8x8[2] = Content.Load<Texture2D>("NewBlocks/Air0");//actually 16x16
+                Blocks8x8[3] = Content.Load<Texture2D>("NewBlocks/Player0");
+                Blocks8x8[4] = Content.Load<Texture2D>("NewBlocks/Goal");
+                Blocks8x8[5] = Content.Load<Texture2D>("NewBlocks/Entity0");
 
-
-                Button.NewButton(Button.MOVEBUTTON, "M", Button.TOPMIDDLE, -75, 75, false, 50, 50,true,Color.Green,Color.DarkOliveGreen);
-                Button.NewButton(Button.ROTATEBUTTON, "R", Button.TOPMIDDLE, -25, 75, false, 50, 50, true, Color.Green, Color.DarkOliveGreen);
-                Button.NewButton(Button.CUTBUTTON, "C", Button.TOPMIDDLE, 25, 75, false, 50, 50, true, Color.Green, Color.DarkOliveGreen);
+                Texture2D[] PlayerTexture = new Texture2D[4];
+                for (int i = 0; i< 4; i++)
+                {
+                    PlayerTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/Player"+i.ToString()), Convert.ToDouble(blocksize) / 16);
+                }
+                Texture2D[] PushableBlockTexture = new Texture2D[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    PushableBlockTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/Block"), Convert.ToDouble(blocksize) / 16);
+                }
+                Texture2D[] EntityTexture = new Texture2D[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    EntityTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/Entity" + i.ToString()), Convert.ToDouble(blocksize) / 16);
+                }
+                Texture2D[] PushableEntityTexture = new Texture2D[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    PushableEntityTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/PushableEntity" + i.ToString()), Convert.ToDouble(blocksize) / 16);
+                }
+                Texture2D[][] NewEntityTextures = { PlayerTexture,PushableBlockTexture, EntityTexture, PushableEntityTexture };
+                EntityTextures = NewEntityTextures;
+                //Button.NewButton(Button.MOVEBUTTON, "M", Button.TOPMIDDLE, -75, 75, false, 50, 50,true,Color.Green,Color.DarkOliveGreen);
+                //Button.NewButton(Button.ROTATEBUTTON, "R", Button.TOPMIDDLE, -25, 75, false, 50, 50, true, Color.Green, Color.DarkOliveGreen);
+                //Button.NewButton(Button.CUTBUTTON, "C", Button.TOPMIDDLE, 25, 75, false, 50, 50, true, Color.Green, Color.DarkOliveGreen);
 
 
 
                 BlocksTexture = new Texture2D[Blocks8x8.Length + 16];
                 for (int i = 1; i < Blocks8x8.Length; i++)
-                    BlocksTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Blocks8x8[i], Convert.ToDouble(blocksize) / 8);
+                    BlocksTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Blocks8x8[i], Convert.ToDouble(blocksize) / 16);
 
                 for (int i = 0; i < 16; i++)
                 {
                     //BlocksTexture[i+6] = Content.Load<Texture2D>("Barriers/" + (i).ToString().PadLeft(2, '0'));
                     BlocksTexture[i + 6] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("Barriers/" + (i).ToString().PadLeft(2, '0')), Convert.ToDouble(blocksize) / 16);
                 }
-
-                Buttons[Button.SETTINGSBUTTON].visible = true;//SETTINGS BUTTON
+                settingsButton.visible = true;
+                //Buttons[Button.SETTINGSBUTTON].visible = true;//SETTINGS BUTTON
                 Chat.Initialize();
                 Chat.NewLine("You Joined The World", time);
                 CurrentlyDisplaying = GAME;
@@ -339,7 +365,7 @@ namespace SpaceTimeCut
                 if (Paused == false || MoveOneFrame)
                 {
                     MoveOneFrame = false;
-                    Times.MoveTime();
+                    level.MoveTime();//INdex out of bounds of array wtf?
 
                     time++;
                 }
@@ -365,12 +391,11 @@ namespace SpaceTimeCut
                 movement.Y -= Convert.ToInt32(moveUp.CheckKeyPress());
                 if (movement != new Point(0, 0))
                 {
-                   times[Times.Location.time].Move(movement);
+                   level.MoveWithKEYS(movement);
                 }
 
+                level.Update(MousePosition);
 
-                for (int i = 0; i < times.Length; i++)
-                    times[i].Update(MousePosition);
 
 
 
@@ -378,11 +403,8 @@ namespace SpaceTimeCut
 
                 if (mouseState.LeftButton == ButtonState.Released && MouseLeftPressed)
                 {
+                    level.Release();
 
-                    for (int i = 0; i < times.Length; i++)
-                    {
-                        times[i].release();
-                    }
                     MouseLeftPressed = false;
 
                 }
@@ -394,16 +416,13 @@ namespace SpaceTimeCut
                     {
                         if (Buttons[b] != null && Buttons[b].Selected)
                         {
-                            Button.Click(b);
+                            
+                            Buttons[b].Click();
                             isOnbutton = true;
                         }
                     }
-                    if(!isOnbutton)
-                    for (int i = 0; i < times.Length; i++)
-                    {
-                        if (times[i].press(i, MousePosition))
-                            break;
-                    }
+                    if (!isOnbutton)
+                        level.Press(MousePosition);
 
                     MouseLeftPressed = true;
                 }
@@ -439,7 +458,7 @@ namespace SpaceTimeCut
 
             _spriteBatch.Begin();
 
-
+            ref Button[] Buttons = ref Button.Buttons;
             if (CurrentlyDisplaying == MAINMENU)
             {
 
@@ -451,13 +470,13 @@ namespace SpaceTimeCut
             }
             else if (CurrentlyDisplaying == GAME)
             {
-                //Point Coords = position.ToPoint();
+                //Point coords = position.ToPoint();
+                level.Draw(_spriteBatch,colorclear);
 
-                for (int t = 0; t < times.Length; t++)
-                    times[t].Draw(_spriteBatch, colorclear,t);
 
 
                 FadeDraw.draw(_spriteBatch, middleposition);
+                Coordinates.draw(_spriteBatch, GraphicsRectangle.Width/2-100, 25);
             }
             else if (CurrentlyDisplaying == DEBUGLOADING)
             {
@@ -475,7 +494,8 @@ namespace SpaceTimeCut
             Extratext.draw(_spriteBatch, 50, GraphicsRectangle.Height - 50);
 
             for (int b = 0; b < Buttons.Count(); b++)
-                if (Buttons[b] != null&& Buttons[b].visible)
+            
+                if (Buttons[b] != null && Buttons[b].visible)
                 {
                     Color LetterColor = colorclear;
                     if (Buttons[b].TextOnly == false)
@@ -495,11 +515,11 @@ Buttons[b].Selected ? Buttons[b].Selectedcolor : Buttons[b].color);
                             LetterColor = LetterColors[Buttons[b].text.color[i]];
                         _spriteBatch.Draw(Letters[Buttons[b].text.chars[i]], Buttons[b].text.coords[i] + new Vector2(Buttons[b].Rectangle.X + Buttons[b].Rectangle.Width / 2 - Buttons[b].text.size.Width / 2, Buttons[b].Rectangle.Y + Buttons[b].Rectangle.Height / 2 - Buttons[b].text.size.Height / 2), LetterColor);
                     }
-                        
-
-                }
 
 
+                
+
+            }
 
             if (Infomode)
                 Info.draw(_spriteBatch, 25, 100);
@@ -557,8 +577,9 @@ Buttons[b].Selected ? Buttons[b].Selectedcolor : Buttons[b].color);
             {
                 if (CurrentlyDisplaying == GAME)
                 {
-                    Coordinates.text = "Ωg" + position.X.ToString() + ", " + position.Y.ToString();
-                    Coordinates.DoText();
+                    Coordinates.text = Level.totalCuts.ToString() + " Cuts out of " + Level.currentMaxCut.ToString();//"Ωg" + position.X.ToString() + ", " + position.Y.ToString();
+                    Coordinates.text += "\n" + Level.totalRotations.ToString() + " Rotations out of " + Level.currentMaxRotations.ToString();
+                        Coordinates.DoText();
                 }
 
                 if (Infomode)
@@ -569,9 +590,11 @@ Buttons[b].Selected ? Buttons[b].Selectedcolor : Buttons[b].color);
                     Info.text +=
                         "\n\nMOUSE:" +
                         "\n  Position X : " + MousePosition.X.ToString() + " Y: " + MousePosition.Y.ToString();
+                    if (CurrentlyDisplaying == GAME)
+                        Info.text +=
+                         "\n\nOriginalLocationOfMouse:" +
+                        "\n  Position X : " + Level.mouseOriginalPosition.X.ToString() + " Y: " + Level.mouseOriginalPosition.Y.ToString();
 
-
-                   
 
                     Info.text +=
                         "\n\nΩbTIME: " + time.ToString();
@@ -613,12 +636,18 @@ Buttons[b].Selected ? Buttons[b].Selectedcolor : Buttons[b].color);
         {
             Paused = !Paused;
             if (Paused)
-                Buttons[Button.SETTINGSBUTTON].visible = true;
+                settingsButton.visible = true;
+                //Buttons[Button.SETTINGSBUTTON].visible = true;
             else
             {
-                Buttons[Button.SETTINGSBUTTON].visible = false;
-                Buttons[Button.RESETBUTTON].visible = false;
-                Buttons[Button.NEWWORLDBUTTON].visible = false;
+                settingsButton.visible = false;
+                //Buttons[Button.SETTINGSBUTTON].visible = false;
+                resetButton.visible = false;
+                levelSelectButton.visible = false;
+
+                //Buttons[Button.RESETBUTTON].visible = false;
+                //Buttons[Button.NEWWORLDBUTTON].visible = false;
+                //Buttons[Button.SAVEWORLDBUTTON].visible = false;
             }
         }
 
@@ -630,22 +659,52 @@ Buttons[b].Selected ? Buttons[b].Selectedcolor : Buttons[b].color);
 
         void InitializeMainMenu()
         {
-            Buttons = new Button[Button.AMOUNT];  //change when adding new button
-            Button.NewButton(Button.PLAYBUTTON, "Play", Button.TOPMIDDLE, -100, 200, false, 200, 50);
-            Button.NewButton(Button.CREATENEWWORLDBUTTON, "Create New World", Button.TOPMIDDLE, -150, 100, false, 300, 50);
-            Button.NewButton(Button.LOADWORLDBUTTON, "Load World", Button.TOPMIDDLE, -150, 200, false, 300, 50);
-            Button.NewButton(Button.DEBUGBUTTON, "Debug", Button.TOPMIDDLE, -150, 300, false, 300, 50);
-            Button.NewButton(Button.WORLD1BUTTON, "World", Button.TOPMIDDLE, -150, 200, false, 300, 100);
-            Button.NewButton(Button.SETTINGSBUTTON, "Settings", Button.TOPRIGHT, -20, 20);
-            Button.NewButton(Button.RESETBUTTON, "Reset", Button.TOPRIGHT, -20, 50);
-            Button.NewButton(Button.NEWWORLDBUTTON, "New World", Button.TOPRIGHT, -20, 70);
-            Button.NewButton(Button.SAVEWORLDBUTTON, "Save World", Button.TOPRIGHT, -20, 90);
+            playButton = new Button("Play", Button.TOPMIDDLE, -100, 200, PlayButtonClick, false, 200, 50,true);
+            settingsButton = new Button("Settings", Button.TOPRIGHT, -20, 20,SettingsButtonClick);
+            resetButton = new Button("Reset", Button.TOPRIGHT, -20, 50,ResetButtonClick);
+            levelSelectButton = new Button("Level select", Button.TOPRIGHT, -20, 70, LevelSelectButtonClick);
+            //Buttons = new Button[Button.AMOUNT];  //change when adding new button
+            //Button.NewButton(Button.PLAYBUTTON, "Play", Button.TOPMIDDLE, -100, 200, false, 200, 50);
+            //Button.NewButton(Button.CREATENEWWORLDBUTTON, "Create New World", Button.TOPMIDDLE, -150, 100, false, 300, 50);
+            //Button.NewButton(Button.LOADWORLDBUTTON, "Load World", Button.TOPMIDDLE, -150, 200, false, 300, 50);
+            //Button.NewButton(Button.DEBUGBUTTON, "Debug", Button.TOPMIDDLE, -150, 300, false, 300, 50);
+            //Button.NewButton(Button.WORLD1BUTTON, "World", Button.TOPMIDDLE, -150, 200, false, 300, 100);
+            //Button.NewButton(Button.SETTINGSBUTTON, "Settings", Button.TOPRIGHT, -20, 20);
+            //Button.NewButton(Button.RESETBUTTON, "Reset", Button.TOPRIGHT, -20, 50);
+            //Button.NewButton(Button.NEWWORLDBUTTON, "New World", Button.TOPRIGHT, -20, 70);
+            //Button.NewButton(Button.SAVEWORLDBUTTON, "Save World", Button.TOPRIGHT, -20, 90);
 
 
-            Buttons[Button.PLAYBUTTON].visible = true;
+            //Buttons[Button.PLAYBUTTON].visible = true;
             MainMenuInitilised = true;
         }
+        void PlayButtonClick(object sender, EventArgs e)
+        {
+            playButton.visible = false;
+      
+            Level.initLevelSelector();
+        }
+        void SettingsButtonClick(object sender, EventArgs e)
+        {
+            resetButton.visible = !resetButton.visible;
+            levelSelectButton.visible = !levelSelectButton.visible;
+        }
+        void ResetButtonClick(object sender, EventArgs e)
+        {
+            Game1.CurrentlyDisplaying = Game1.LOADING;
+        }
+        void LevelSelectButtonClick(object sender, EventArgs e)
+        {
 
+                for(int i = 0; i < Level.levelSelectors.Length; i++)
+            {
+                Level.levelSelectors[i].button.visible = true;
+            }
+                Level.cutButton.visible = false;
+            Level.rotateButton.visible = false;
+            Level.moveButton.visible = false;
+            Game1.CurrentlyDisplaying = Game1.MAINMENU;
+        }
         public static Texture2D CreateCircle(GraphicsDevice graphicsDevice, int diameter)
         {
             Texture2D texture = new Texture2D(graphicsDevice, diameter, diameter);

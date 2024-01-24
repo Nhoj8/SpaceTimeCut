@@ -17,7 +17,7 @@ using Microsoft.Xna.Framework.Input;
 /// diversify world gen(biomes like in the cool slime video)
 /// make big map image
 /// make extrinzoid mode change into an event or just make them not be angry if no friends nearby
-/// DONE need to transfer all calculations from the draw phasde into the game phae ie: make th eblocks test for extrinzoids and corruption in there
+/// DONE need to transfer all calculations from the Draw phasde into the game phae ie: make th eblocks test for extrinzoids and corruption in there
 ///
 /// </summary>
 
@@ -321,52 +321,71 @@ namespace SpaceTimeCut
         public const int BOTTOMLEFT = 6;
         public const int BOTTOMMIDDLE = 7;
         public const int BOTTOMRIGHT = 8;
+        public static Button[] Buttons = new Button[0];
+        //public const int PLAYBUTTON = 0;
+        //public const int CREATENEWWORLDBUTTON = 1;
+        //public const int DEBUGBUTTON = 2;
+        //public const int SETTINGSBUTTON = 3;
+        //public const int RESETBUTTON = 4;
+        //public const int NEWWORLDBUTTON = 5;
+        //public const int SAVEWORLDBUTTON = 6;
+        //public const int LOADWORLDBUTTON = 7;
+        //public const int WORLD1BUTTON = 8;
+        //public const int ROTATEBUTTON = 9;
+        //public const int CUTBUTTON = 10;
+        //public const int MOVEBUTTON = 11;
+        //public const int AMOUNT = 12;//The Total amount of buttons
 
-        public const int PLAYBUTTON = 0;
-        public const int CREATENEWWORLDBUTTON = 1;
-        public const int DEBUGBUTTON = 2;
-        public const int SETTINGSBUTTON = 3;
-        public const int RESETBUTTON = 4;
-        public const int NEWWORLDBUTTON = 5;
-        public const int SAVEWORLDBUTTON = 6;
-        public const int LOADWORLDBUTTON = 7;
-        public const int WORLD1BUTTON = 8;
-        public const int ROTATEBUTTON = 9;
-        public const int CUTBUTTON = 10;
-        public const int MOVEBUTTON = 11;
-        public const int AMOUNT = 12;//The Total amount of buttons
+        public event EventHandler Press;
 
-        public static void NewButton(int buttonNum, string ButtonText, int PositionAnchor, int RecX, int RecY, Boolean TextOnly = true, int RecWidth = 200, int RecHeight = 50, Boolean ButtonVisible = false, Nullable<Color> color = null, Nullable<Color> Selectedcolor = null)
+        protected virtual void OnPress(EventArgs e)
         {
-            ref Button[] Buttons = ref Game1.Buttons;
-            Buttons[buttonNum] = new Button();
-            Buttons[buttonNum].Position = new Vector2(RecX, RecY);
-            Buttons[buttonNum].PositionAnchor = PositionAnchor;
-            Buttons[buttonNum].TextOnly = TextOnly;
-            Buttons[buttonNum].Rectangle = new Rectangle(RecX, RecY, RecWidth, RecHeight);
-            Buttons[buttonNum].text = new Text();
-            ButtonChangeText(buttonNum, ButtonText);
-            Buttons[buttonNum].visible = ButtonVisible;
-            if (color != null)
-                Buttons[buttonNum].color = (Color)color;
-            if (Selectedcolor != null)
-                Buttons[buttonNum].Selectedcolor = (Color)Selectedcolor;
+            Press?.Invoke(this, e);
         }
-        public static void ButtonChangeText(int buttonNum, string ButtonText)
+        public void Click()
         {
-            ref Button[] Buttons = ref Game1.Buttons;
-            Buttons[buttonNum].text.text = ButtonText;
-            Buttons[buttonNum].text.DoText();
-            if (Buttons[buttonNum].TextOnly)
+            Selected = false;
+            OnPress(EventArgs.Empty);
+        }
+        public Button(string ButtonText, int PositionAnchor, int RecX, int RecY, EventHandler eventHandler, Boolean TextOnly = true, int RecWidth = 200, int RecHeight = 50, Boolean ButtonVisible = false, Nullable<Color> color = null, Nullable<Color> Selectedcolor = null)
+        {
+            
+           int buttonNum = Buttons.Length;
+            Array.Resize(ref Buttons, buttonNum + 1);
+            //Buttons[buttonNum] = new Button();
+            this.Position = new Vector2(RecX, RecY);
+            this.PositionAnchor = PositionAnchor;
+            this.TextOnly = TextOnly;
+            this.Rectangle = new Rectangle(RecX, RecY, RecWidth, RecHeight);
+            this.text = new Text();
+
+            this.visible = ButtonVisible;
+            if (color != null)
+                this.color = (Color)color;
+            if (Selectedcolor != null)
+                this.Selectedcolor = (Color)Selectedcolor;
+            Press += eventHandler;
+            Buttons[buttonNum] = this;
+            ButtonChangeText(ButtonText);
+            ResetButtonPosition(buttonNum);
+        }
+
+        void ButtonChangeText(string ButtonText)
+        {
+            
+
+            text.text = ButtonText;
+            text.DoText();
+            if (TextOnly)
             {
-                int RecWidth = Buttons[buttonNum].text.size.Width;
-                int RecHeight = Buttons[buttonNum].text.size.Height;
-                Buttons[buttonNum].Rectangle.Size = new Point(RecWidth, RecHeight);
+                int RecWidth = text.size.Width;
+                int RecHeight = text.size.Height;
+               Rectangle.Size = new Point(RecWidth, RecHeight);
             }
         }
         static void ResetButtonPosition(int buttonNum)
         {
-            ref Button[] Buttons = ref Game1.Buttons;
+            
             if (Buttons[buttonNum] != null)
             {
 
@@ -379,7 +398,7 @@ namespace SpaceTimeCut
         }
         public static void ResetAnchors(int ViewWidth, int ViewHeight)
         {
-            ref Button[] Buttons = ref Game1.Buttons;
+           
 
             int row = 0;
             for (int i = 0; i < PositionAnchors.Count(); i++)
@@ -391,104 +410,80 @@ namespace SpaceTimeCut
             for (int b = 0; b < Buttons.Count(); b++)
                 ResetButtonPosition(b);
         }
-        public static void Click(int buttonNum)
-        {
-            ref Button[] Buttons = ref Game1.Buttons;
-            Buttons[buttonNum].Selected = false;
-            if (buttonNum == PLAYBUTTON)//PLAY BUTTON
-            {
-                Buttons[PLAYBUTTON].visible = false;
-                Buttons[CREATENEWWORLDBUTTON].visible = true;
-                Buttons[LOADWORLDBUTTON].visible = true;
-                Buttons[DEBUGBUTTON].visible = true;
-            }
-            else if (buttonNum == CREATENEWWORLDBUTTON)//CREATE NEW WORLD BUTTON
-            {
-                Buttons[CREATENEWWORLDBUTTON].visible = false;
-                Buttons[DEBUGBUTTON].visible = false;
-                Buttons[LOADWORLDBUTTON].visible = false;
-                Game1.CurrentlyDisplaying = Game1.LOADING;
+        //public static void Click(int buttonNum)
+        //{
+            
+        //    Buttons[buttonNum].Selected = false;
+        //    //if (buttonNum == PLAYBUTTON)//PLAY BUTTON
+        //    //{
+        //    //    Buttons[PLAYBUTTON].visible = false;
+        //    //    //Buttons[CREATENEWWORLDBUTTON].visible = true;
+        //    //    //Buttons[LOADWORLDBUTTON].visible = true;
+        //    //    //Buttons[DEBUGBUTTON].visible = true;
+        //    //    Level.initLevelSelector();
+        //    //}
+        //    //else if (buttonNum == CREATENEWWORLDBUTTON)//CREATE NEW WORLD BUTTON
+        //    //{
+        //    //    Buttons[CREATENEWWORLDBUTTON].visible = false;
+        //    //    Buttons[DEBUGBUTTON].visible = false;
+        //    //    Buttons[LOADWORLDBUTTON].visible = false;
+        //    //    Game1.CurrentlyDisplaying = Game1.LOADING;
 
-            }
-            else if (buttonNum == LOADWORLDBUTTON)//LOAD WORLD BUTTON
-            {
-                Buttons[CREATENEWWORLDBUTTON].visible = false;
-                Buttons[DEBUGBUTTON].visible = false;
-                Buttons[LOADWORLDBUTTON].visible = false;
-                Buttons[WORLD1BUTTON].visible = true;
-            }
-            else if (buttonNum == WORLD1BUTTON)//LOAD WORLD1 BUTTON
-            {
-                Buttons[WORLD1BUTTON].visible = false;
+        //    //}
+        //    //else if (buttonNum == LOADWORLDBUTTON)//LOAD WORLD BUTTON
+        //    //{
+        //    //    Buttons[CREATENEWWORLDBUTTON].visible = false;
+        //    //    Buttons[DEBUGBUTTON].visible = false;
+        //    //    Buttons[LOADWORLDBUTTON].visible = false;
+        //    //    Buttons[WORLD1BUTTON].visible = true;
+        //    //}
+        //    //else if (buttonNum == WORLD1BUTTON)//LOAD WORLD1 BUTTON
+        //    //{
+        //    //    Buttons[WORLD1BUTTON].visible = false;
 
 
-                Game1.CurrentlyDisplaying = Game1.LOADING;
-            }
-            else if (buttonNum == DEBUGBUTTON)//DEBUG BUTTON
-            {
-                Buttons[CREATENEWWORLDBUTTON].visible = false;
-                Buttons[DEBUGBUTTON].visible = false;
-                Buttons[LOADWORLDBUTTON].visible = false;
-                Game1.CurrentlyDisplaying = Game1.DEBUGLOADING;
+        //    //    Game1.CurrentlyDisplaying = Game1.LOADING;
+        //    //}
+        //    //else if (buttonNum == DEBUGBUTTON)//DEBUG BUTTON
+        //    //{
+        //    //    Buttons[CREATENEWWORLDBUTTON].visible = false;
+        //    //    Buttons[DEBUGBUTTON].visible = false;
+        //    //    Buttons[LOADWORLDBUTTON].visible = false;
+        //    //    Game1.CurrentlyDisplaying = Game1.DEBUGLOADING;
 
-            }
-            else if (buttonNum == SETTINGSBUTTON)//SETTINGS BUTTON
-            {
-                Buttons[NEWWORLDBUTTON].visible = !Buttons[NEWWORLDBUTTON].visible;
-                Buttons[RESETBUTTON].visible = !Buttons[RESETBUTTON].visible;
-                Buttons[SAVEWORLDBUTTON].visible = !Buttons[SAVEWORLDBUTTON].visible;
+        //    //}
+        //    //else if (buttonNum == SETTINGSBUTTON)//SETTINGS BUTTON
+        //    //{
+        //    //    Buttons[NEWWORLDBUTTON].visible = !Buttons[NEWWORLDBUTTON].visible;
+        //    //    Buttons[RESETBUTTON].visible = !Buttons[RESETBUTTON].visible;
+        //    //    Buttons[SAVEWORLDBUTTON].visible = !Buttons[SAVEWORLDBUTTON].visible;
 
-            }
-            else if (buttonNum == RESETBUTTON)//RESET BUTTON
-            {
-                Game1.CurrentlyDisplaying = Game1.LOADING;
-            }
-            else if (buttonNum == NEWWORLDBUTTON)//NEWWORLD BUTTON
-            {
+        //    //}
+        //    //else if (buttonNum == RESETBUTTON)//RESET BUTTON
+        //    //{
+        //    //    Game1.CurrentlyDisplaying = Game1.LOADING;
+        //    //}
+        //    //else if (buttonNum == NEWWORLDBUTTON)//NEWWORLD BUTTON
+        //    //{
 
-                Game1.CurrentlyDisplaying = Game1.LOADING;
-            }
-            else if (buttonNum == MOVEBUTTON)//NEWWORLD BUTTON
-            {
+        //    //    Game1.CurrentlyDisplaying = Game1.LOADING;
+        //    //}
+        //    //else if (buttonNum == MOVEBUTTON)//NEWWORLD BUTTON
+        //    //{
 
-                Level.IsGrabbing = true;
-                Level.IsCutting = false;
-                Level.IsRotating = false;
-                Buttons[MOVEBUTTON].color = Color.CornflowerBlue;
-                Buttons[MOVEBUTTON].Selectedcolor = Color.CadetBlue;
-                Buttons[CUTBUTTON].color = Color.Green;
-                Buttons[CUTBUTTON].Selectedcolor = Color.DarkOliveGreen;
-                Buttons[ROTATEBUTTON].color = Color.Green;
-                Buttons[ROTATEBUTTON].Selectedcolor = Color.DarkOliveGreen;
-            }
-            else if (buttonNum == CUTBUTTON)//NEWWORLD BUTTON
-            {
 
-                Level.IsGrabbing = false;
-                Level.IsCutting = true;
-                Level.IsRotating = false;
-                Buttons[CUTBUTTON].color = Color.CornflowerBlue;
-                Buttons[CUTBUTTON].Selectedcolor = Color.CadetBlue;
-                Buttons[MOVEBUTTON].color = Color.Green;
-                Buttons[MOVEBUTTON].Selectedcolor = Color.DarkOliveGreen;
-                Buttons[ROTATEBUTTON].color = Color.Green;
-                Buttons[ROTATEBUTTON].Selectedcolor = Color.DarkOliveGreen;
-            }
-            else if (buttonNum == ROTATEBUTTON)//NEWWORLD BUTTON
-            {
+        //    //}
+        //    //else if (buttonNum == CUTBUTTON)//NEWWORLD BUTTON
+        //    //{
 
-                Level.IsGrabbing = false;
-                Level.IsCutting = false;
-                Level.IsRotating = true;
-                Buttons[ROTATEBUTTON].color = Color.CornflowerBlue;
-                Buttons[ROTATEBUTTON].Selectedcolor = Color.CadetBlue;
-                Buttons[MOVEBUTTON].color = Color.Green;
-                Buttons[MOVEBUTTON].Selectedcolor = Color.DarkOliveGreen;
-                Buttons[CUTBUTTON].color = Color.Green;
-                Buttons[CUTBUTTON].Selectedcolor = Color.DarkOliveGreen;
-            }
+        //    //}
+        //    //else if (buttonNum == ROTATEBUTTON)//NEWWORLD BUTTON
+        //    //{
 
-        }
+
+        //    //}
+
+        //}
     }
 
     public class Label
@@ -616,7 +611,7 @@ namespace SpaceTimeCut
             Texts = new string[maxLengthOfchat];
         }
 
-        public void NewLine(string Newtext, int TimeToDisplay, bool inDraw = false)//if in draw mode disregarde line 
+        public void NewLine(string Newtext, int TimeToDisplay, bool inDraw = false)//if in Draw mode disregarde line 
         {
 
             if (TotalLines + 1 >= maxLengthOfchat)
