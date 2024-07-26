@@ -14,12 +14,4 @@
 <video>
     <source src="https://drive.google.com/uc?export=download&id=1oDdgyp7L5HJJYHk0PjDInn31ujX6uUPn" type='video/mp4'>
 </video>
-<video style="float: left; margin-right: 10px;">
-  <source src="https://drive.google.com/uc?export=view&id=1oDdgyp7L5HJJYHk0PjDInn31ujX6uUPn" type="video/mp4">
-Your browser does not support the video tag.
-</video>
-<video width="320" height="240" controls>
-  <source src="https://drive.google.com/file/d/1oDdgyp7L5HJJYHk0PjDInn31ujX6uUPn/view" type="video/mp4">
-Your browser does not support the video tag.
-</video>
 
