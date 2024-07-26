@@ -11,7 +11,5 @@
 <img src="https://drive.google.com/uc?export=view&id=1Sevb0cNR4lH1ivMz-L35PgMQGj70IM4R"
      alt="LevelImage4"
      style="float: left; margin-right: 10px;" />
-<video>
-    <source src="https://drive.google.com/uc?export=download&id=1oDdgyp7L5HJJYHk0PjDInn31ujX6uUPn" type='video/mp4'>
-</video>
+<video src="https://drive.google.com/uc?export=download&id=1oDdgyp7L5HJJYHk0PjDInn31ujX6uUPn" type='video/mp4' />
 
