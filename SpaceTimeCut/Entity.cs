@@ -148,7 +148,9 @@ namespace SpaceTimeCut
         public bool hasMoved = false;
         public int imageNum;
 
-        void Move() { movableProperty.Move(); }
+        //void Move() { movableProperty.Move(); }
+
+        
 
         public Entity(int x, int y, int imageNum, int directionOfMovement = 0, bool isMoving = true)
         {
@@ -164,11 +166,13 @@ namespace SpaceTimeCut
             location = destination;
 
         }
+        //what the program will attempt to call
         public virtual void Move(int entity)
         {
             return;
             //DoesMove(entity, directionOfMovement);
         }
+        //actually try to move
         public virtual void DoesMove(int entity, int directionOfMovement)
         {
             SpaceTimeLocation oldDestination = destination;
@@ -187,8 +191,9 @@ namespace SpaceTimeCut
                     if (destination == entitys[i].destination || destination == entitys[i].location)
                         blockingAmount++;
                 }
-                   if (blockingAmount>1)
+                if (blockingAmount>1)
                 {
+                    Game1.Chat.NewLine("blockingamountbig", Game1.time);
                     destination = oldDestination;
                     return;
                 }    
@@ -288,11 +293,18 @@ namespace SpaceTimeCut
 
 
         }
-        public virtual void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage)
+        public bool CheckIfWin()
         {
-            DrawEntity(_spriteBatch, colorclear, location, true, entityImage, !isMoving, directionOfMovement);
-
-            DrawEntity(_spriteBatch, colorclear, destination, false, entityImage, !isMoving, directionOfMovement);
+            if (Level.times[location.time].grids[location.gridnum].Blocks[location.coords.X, location.coords.Y] == Grid.GOAL)
+                Game1.Chat.NewLine("You WIN",Game1.time);
+            return false;
+        }
+        public virtual void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage,int t,int b)
+        {
+            if (Level.times[location.time].visible && location.time == t && location.gridnum==b)
+                DrawEntity(_spriteBatch, colorclear, location, true, entityImage, !isMoving, directionOfMovement);
+            if (Level.times[destination.time].visible && destination.time == t && destination.gridnum == b)
+               DrawEntity(_spriteBatch, colorclear, destination, false, entityImage, !isMoving, directionOfMovement);
         }
         public void DrawEntity(SpriteBatch _spriteBatch, Color colorclear, SpaceTimeLocation location, bool isLocation, int entityImage, bool isStationary, int directionOfMovement,int ImageDirection = -1)
         {
@@ -331,9 +343,9 @@ namespace SpaceTimeCut
                 ImageDirection = directionOfMovement;
 
             if ((isLocation && (directionOfMovement == 0 || directionOfMovement == 1)) || (!isLocation && !(directionOfMovement == 0 || directionOfMovement == 1)))
-                _spriteBatch.Draw(Game1.EntityTextures[entityImage][ImageDirection], (progress) * (new Vector2(Grid.Cos[direction], Grid.Sin[direction])) * blocksize + blockRect.Location.ToVector2() + new Vector2(x * blocksize, y * blocksize), new Rectangle(0, 0, (int)Math.Ceiling(blocksize - blocksize * progress * Grid.Cos[direction]), (int)Math.Ceiling(blocksize - blocksize * progress * Grid.Sin[direction])), colorclear);
+                _spriteBatch.Draw(Game1.EntityTextures[entityImage][ImageDirection], (progress) * (new Vector2(Grid.Cos[direction], Grid.Sin[direction])) * blocksize + blockRect.Location.ToVector2() + new Vector2(x * blocksize, y * blocksize), new Rectangle(0, 0, (int)Math.Round(blocksize - blocksize * progress * Grid.Cos[direction]), (int)Math.Round(blocksize - blocksize * progress * Grid.Sin[direction])), colorclear);
             else
-                _spriteBatch.Draw(Game1.EntityTextures[entityImage][ImageDirection], blockRect.Location.ToVector2() + new Vector2(x * blocksize, y * blocksize), new Rectangle((int)(blocksize * (Invertprogress) * Grid.Cos[direction]), (int)(blocksize * (Invertprogress) * Grid.Sin[direction]), (int)Math.Ceiling(blocksize - blocksize * (Invertprogress) * Grid.Cos[direction]), (int)Math.Ceiling(blocksize - blocksize * (Invertprogress) * Grid.Sin[direction])), colorclear);
+                _spriteBatch.Draw(Game1.EntityTextures[entityImage][ImageDirection], blockRect.Location.ToVector2() + new Vector2(x * blocksize, y * blocksize), new Rectangle((int)(blocksize * (Invertprogress) * Grid.Cos[direction]), (int)(blocksize * (Invertprogress) * Grid.Sin[direction]), (int)Math.Round(blocksize - blocksize * (Invertprogress) * Grid.Cos[direction]), (int)Math.Round(blocksize - blocksize * (Invertprogress) * Grid.Sin[direction])), colorclear);
 
         }
     }
@@ -406,20 +418,26 @@ namespace SpaceTimeCut
             return true;
 
         }
-        public override void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage)
+        public override void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage,int t, int b)
         {
-            base.Draw(_spriteBatch, colorclear, imageNum);
+            base.Draw(_spriteBatch, colorclear, imageNum,t,b);
             for (int i = 0; i < oldOriginalLocations.Length; i++)
             {
-                if (times[i].starttime + times[i].amounOfCircles <= currentCircle)
-                    DrawEntity(_spriteBatch, colorclear, times[i].GetLocationFromOriginalPoint(oldOriginalLocations[i].coords,i), true, imageNum, true, directionOfMovement);//Grid.ZERODIRECTION);
+                if (times[i].visible && times[i].starttime + times[i].amounOfCircles <= currentCircle)
+                {
+                    SpaceTimeLocation originalLocation = times[i].GetLocationFromOriginalPoint(oldOriginalLocations[i].coords, i);
+                    if (originalLocation.time != t || originalLocation.gridnum != b)
+                        continue;
+                    DrawEntity(_spriteBatch, colorclear, originalLocation, true, imageNum, true, directionOfMovement);//Grid.ZERODIRECTION);
+                }
+
             }
 
             for (int i = 0; i < times.Length; i++)
             {
                 //if (i > 0)
                 //System.Windows.Forms.MessageBox.Show(times[i].starttime.ToString() + " " + currentCircle.ToString());
-                if (times[i].starttime <= currentCircle)
+                if (!times[i].visible||times[i].starttime <= currentCircle)
                 {
 
                     continue;
@@ -427,11 +445,14 @@ namespace SpaceTimeCut
 
                 Point OriginalLocationOfPoint = times[location.time].grids[location.gridnum].GetOriginalLocationOfPoint(location.coords);//gets where the entityNum would be if there had been no rotations or cuts
                 SpaceTimeLocation drawLocation = times[i].GetLocationFromOriginalPoint(OriginalLocationOfPoint, i);//from the orginalLocation, gets the place where it would be now
-
-                DrawEntity(_spriteBatch, colorclear, drawLocation, true, imageNum, !isMoving, (directionOfMovement + times[drawLocation.time].grids[drawLocation.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
+                if (drawLocation.time != t || drawLocation.gridnum != b)
+                    continue;
+                Color futureColor = colorclear;
+                //Color futureColor = new Color(100, 100, 100, 180);
+                DrawEntity(_spriteBatch, futureColor, drawLocation, true, imageNum, !isMoving, (directionOfMovement + times[drawLocation.time].grids[drawLocation.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
                 Point OriginalDestinationOfPoint = times[location.time].grids[destination.gridnum].GetOriginalLocationOfPoint(destination.coords);//gets where the entityNum would be if there had been no rotations or cuts
                 SpaceTimeLocation drawDestination = times[i].GetLocationFromOriginalPoint(OriginalDestinationOfPoint, i);//from the orginalLocation, gets the place where it would be now
-                DrawEntity(_spriteBatch, colorclear, drawDestination, false, imageNum, !isMoving, (directionOfMovement + times[drawDestination.time].grids[drawDestination.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
+                DrawEntity(_spriteBatch, futureColor, drawDestination, false, imageNum, !isMoving, (directionOfMovement + times[drawDestination.time].grids[drawDestination.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
 
             }
 
@@ -518,6 +539,7 @@ namespace SpaceTimeCut
                 }
                 if (blockingAmount > 1)
                 {
+                    Game1.Chat.NewLine("blockingamountbig", Game1.time);
                     destination = oldDestination;
                     hasMoved = false;
                     return;
@@ -634,16 +656,134 @@ namespace SpaceTimeCut
             return true;
 
         }
-        public override void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage)
+        public override void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage,int t,int b)
         {
             if (!isMoving)
                 directionOfMovement = OverallDirectionOfMovement;
-            DrawEntity(_spriteBatch, colorclear, location, true, entityImage, false, directionOfMovement,OverallDirectionOfMovement);
-
-            DrawEntity(_spriteBatch, colorclear, destination, false, entityImage, false, directionOfMovement,OverallDirectionOfMovement);
+            if(location.time == t && location.gridnum == b)
+                DrawEntity(_spriteBatch, colorclear, location, true, entityImage, false, directionOfMovement,OverallDirectionOfMovement);
+            if (destination.time == t && destination.gridnum == b)
+                DrawEntity(_spriteBatch, colorclear, destination, false, entityImage, false, directionOfMovement,OverallDirectionOfMovement);
         }
 
 
     }
+
+
+
+
+//    public class FuturePushableEntity : PushableEntity//make a moving class and a pushable class, and make a combined one
+//    {
+//        //static int imageNum = Grid.PUSHABLEBLOCKTEXTURENUM;
+//        SpaceTimeLocation[] FurtureLocations = new SpaceTimeLocation[0];
+//        public FuturePushableEntity(int x, int y, int directionOfMovement = 0, bool isMoving = false) : base(x, y, directionOfMovement, isMoving)
+//        {
+
+//        }
+//        public override void Move(int entity)
+//        {
+
+//            if (currentCircle >= times[location.time].amounOfCircles + times[location.time].starttime && times.Length > destination.time + 1)
+//            {
+//                if (oldOriginalLocations.Length < times.Length - 1)
+//                {
+//                    Array.Resize(ref oldOriginalLocations, times.Length - 1);
+//                }
+//                oldOriginalLocations[destination.time] = destination;
+//                oldOriginalLocations[destination.time].coords = GetOriginalLocationOfPoint(destination);
+//                //Push(entity, Grid.ZERODIRECTION);
+//                DoesMove(entity, Grid.ZERODIRECTION);
+//                isMoving = false;
+//                location = destination;
+
+//            }
+//        }
+//        public override void UpdateLocation(int entity)
+//        {
+
+//            isMoving = false;
+//            base.UpdateLocation(entity);
+//        }
+
+
+//        public override bool Push(int entity, int directionOfMovement)
+//        {
+
+//            SpaceTimeLocation oldDestination = destination;
+
+//            times[location.time].grids[location.gridnum].Move(new Point(Grid.Cos[directionOfMovement], Grid.Sin[directionOfMovement]), ref location, ref destination);
+
+//            if (oldDestination != destination)
+
+//                for (int i = 0; i < entitys.Length; i++)
+//                {
+//                    if (i == entity)
+//                        continue;
+//                    if (destination == entitys[i].destination || destination == entitys[i].location)
+//                    {
+
+//                        if (destination == entitys[i].location && entitys[i].Push(i, directionOfMovement))
+//                        {
+//                            continue;
+//                        }
+//                        destination = oldDestination;
+//                        return false;
+//                        break;
+//                    }
+//                }
+
+
+//            else
+//                return false;
+//            isMoving = true;
+//            this.directionOfMovement = directionOfMovement == Grid.ZERODIRECTION ? 0 : directionOfMovement;
+
+//            return true;
+
+//        }
+//        public override void Draw(SpriteBatch _spriteBatch, Color colorclear, int entityImage, int t, int b)
+//        {
+//            base.Draw(_spriteBatch, colorclear, imageNum, t, b);
+//            for (int i = 0; i < oldOriginalLocations.Length; i++)
+//            {
+//                if (times[i].visible && times[i].starttime + times[i].amounOfCircles <= currentCircle)
+//                {
+//                    SpaceTimeLocation originalLocation = times[i].GetLocationFromOriginalPoint(oldOriginalLocations[i].coords, i);
+//                    if (originalLocation.time != t || originalLocation.gridnum != b)
+//                        continue;
+//                    DrawEntity(_spriteBatch, colorclear, originalLocation, true, imageNum, true, directionOfMovement);//Grid.ZERODIRECTION);
+//                }
+
+//            }
+
+//            for (int i = 0; i < times.Length; i++)
+//            {
+//                //if (i > 0)
+//                //System.Windows.Forms.MessageBox.Show(times[i].starttime.ToString() + " " + currentCircle.ToString());
+//                if (!times[i].visible || times[i].starttime <= currentCircle)
+//                {
+
+//                    continue;
+//                }
+
+//                Point OriginalLocationOfPoint = times[location.time].grids[location.gridnum].GetOriginalLocationOfPoint(location.coords);//gets where the entityNum would be if there had been no rotations or cuts
+//                SpaceTimeLocation drawLocation = times[i].GetLocationFromOriginalPoint(OriginalLocationOfPoint, i);//from the orginalLocation, gets the place where it would be now
+//                if (drawLocation.time != t || drawLocation.gridnum != b)
+//                    continue;
+//                Color futureColor = colorclear;
+//                //Color futureColor = new Color(100, 100, 100, 180);
+//                DrawEntity(_spriteBatch, futureColor, drawLocation, true, imageNum, !isMoving, (directionOfMovement + times[drawLocation.time].grids[drawLocation.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
+//                Point OriginalDestinationOfPoint = times[location.time].grids[destination.gridnum].GetOriginalLocationOfPoint(destination.coords);//gets where the entityNum would be if there had been no rotations or cuts
+//                SpaceTimeLocation drawDestination = times[i].GetLocationFromOriginalPoint(OriginalDestinationOfPoint, i);//from the orginalLocation, gets the place where it would be now
+//                DrawEntity(_spriteBatch, futureColor, drawDestination, false, imageNum, !isMoving, (directionOfMovement + times[drawDestination.time].grids[drawDestination.gridnum].rotation - times[location.time].grids[location.gridnum].rotation + 8) % 4);
+
+//            }
+
+
+
+//        }
+
+
+//    }
 
 }

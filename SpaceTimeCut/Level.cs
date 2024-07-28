@@ -107,14 +107,15 @@ namespace SpaceTimeCut
             //level 4
             int[,] level5 = {
 { B,B,B,B,B,B, B, B,B,B },
-{ B,P,A,A,A,A, A, A,O,B },
+{ P,A,A,A,A,A, A, A,O,B },
 { B,B,B,B,B,B, B, B,M,B },
 { B,A,A,A,A,R, D, A,A,B },
 { M,M,M,M,M,M, M, B,A,B },
 { M,M,M,M,M,M, M, B,A,B },
 { M,M,M,M,M,M, M, B,A,B },
 { M,M,M,M,M,M, M, B,A,B },
-{ M,M,M,M,M,M, M, B,U,B },
+{ M,M,M,M,M,M, M, B,A,B },
+{ M,M,M,M,M,M, M, B,U,M },
 { M,M,M,M,M,M, M, M,U,M },
 };
             int[,] level6 = {
@@ -152,13 +153,25 @@ namespace SpaceTimeCut
 { M,B,M,B,B, B, B,B,M },
 { L,L,L,M,M, M, M,M,M },
 };
+            int[,] level10 = {
+{ A,B,B,B,B,B, B, B,B,B },
+{ P,A,A,A,A,A, A, A,O,B },
+{ A,B,A,A,A,A, A, D,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,U,B },
+{ A,B,B,B,B,B, B, B,B,B },
+};
             int[,] leveltest = {
 { A,A,A,A,A,A, A, B,B,B },
 { A,P,M,M,M,M, A, A,O,B },
 { A,A,A,A,A,A, A, B,B,B },
 { A,A,A,H,A,F, A, B,B,B },
 };
-            int[][,] theBlocks = { level1, level2, level3, level4, level5, level6, level7,level8,level9,leveltest };
+            int[][,] theBlocks = { level1, level2, level3, level4, level5, level6, level7,level8,level9,level10,leveltest };
 
             levelSelectors = new LevelSelector[theBlocks.Length];
             for(int i = 0; i < theBlocks.Length; i++)
@@ -273,6 +286,7 @@ namespace SpaceTimeCut
             {
                 entitys[i].UpdateLocation(i);
             }
+            entitys[PLAYERENTITY].CheckIfWin();
             for (int i = 0; i < entitys.Length; i++)
             //for (int i = entitys.Length - 1; i >= 0; i--)
             {
@@ -310,8 +324,6 @@ namespace SpaceTimeCut
                 times[t].Draw(_spriteBatch, colorclear, t);
 
 
-
-            
         }
 
         public struct SpaceTimeLocation
@@ -405,15 +417,19 @@ namespace SpaceTimeCut
         public Rectangle timeBarRect;
         public int starttime = 0;
         public int amounOfCircles =TotalamounOfCircles;
-
+        
         public int cutLocation = -1;
 
         public Grid[] grids;
         int circleHovering = -1;
         int circleSelected = -1;
 
-        
-        
+        Rectangle timeSelectBar;
+        bool timeSelectBarHovering;
+        public bool visible=true;
+
+
+
 
         public void Initilize(ref int[,] theBlocks)
         {
@@ -449,7 +465,7 @@ namespace SpaceTimeCut
         public bool Press(int t, Point MousePosition)
         {
             bool hasMouse = false;//if anything in this time Contains the mouse
-            if (timeBarRect.Contains(MousePosition))
+            if (timeBarRect.Contains(MousePosition)&& !timeSelectBarHovering)
             {
 
                 if (cutLocation > -1)
@@ -459,6 +475,13 @@ namespace SpaceTimeCut
                 hasMouse = true;
                 return hasMouse;
             }
+            if (timeSelectBarHovering)
+            {
+                hasMouse = true;
+                visible = !visible;
+                return hasMouse;
+            }
+                
 
 
             for (int i = grids.Length - 1; i > -1; i--)
@@ -521,35 +544,45 @@ namespace SpaceTimeCut
         void TimeBarRefersh()
         {
             timeBarRect = new Rectangle(Button.PositionAnchors[Button.BOTTOMMIDDLE].ToPoint() + new Point((starttime) * lengthpercircle, -100) - new Point(lengthpercircle * (TotalamounOfCircles - 1) / 2, height / 2), new Point(lengthpercircle * (amounOfCircles - 1) + circle.Width, height));
+            int BarThickness = 10;
+            timeSelectBar = new Rectangle(Button.PositionAnchors[Button.BOTTOMMIDDLE].ToPoint() + new Point((starttime) * lengthpercircle- BarThickness, -100 - BarThickness) - new Point(lengthpercircle * (TotalamounOfCircles - 1) / 2, height / 2), new Point(lengthpercircle * (amounOfCircles - 1) + circle.Width+BarThickness*2, height+ BarThickness*2));
 
         }
-
         public void Update(Point MousePosition,int t)
         {
             TimeBarRefersh();
             timeBarHasMouse = false;
+            timeSelectBarHovering= false;
             circleHovering = -1;
             cutLocation = -1;
-            if (timeBarRect.Contains(MousePosition))
+            if (timeSelectBar.Contains(MousePosition))
             {
-                timeBarHasMouse = true;
+                timeSelectBarHovering = true;
 
-                for (int i = 0; i < amounOfCircles; i++)
+                if (timeBarRect.Contains(MousePosition))
                 {
-                    if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i), 0), circle.Bounds.Size).Contains(MousePosition))
+                    timeBarHasMouse = true;
+
+                    for (int i = 0; i < amounOfCircles; i++)
                     {
-                        circleHovering = i;
-                        break;
-                    }
-                    else if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i + circle.Width), 0), new Point((int)(lengthpercircle - circle.Width), circle.Height)).Contains(MousePosition)&& IsCutting)
-                    {
-                        cutLocation = i;
-                        break;
+                        if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i), 0), circle.Bounds.Size).Contains(MousePosition))
+                        {
+                            circleHovering = i;
+                            timeSelectBarHovering = false;
+                            break;
+                        }
+                        else if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i + circle.Width), 0), new Point((int)(lengthpercircle - circle.Width), circle.Height)).Contains(MousePosition) && IsCutting)
+                        {
+                            cutLocation = i;
+                            timeSelectBarHovering = false;
+                            break;
+                        }
                     }
                 }
             }
             for (int i = 0; i < grids.Length; i++)
-                grids[i].Update(MousePosition,t,i);
+                grids[i].Update(MousePosition, t, i);
+
         }
         void Cut(int t)
         {
@@ -645,19 +678,34 @@ namespace SpaceTimeCut
 
         public void Draw(SpriteBatch _spriteBatch, Color colorclear, int t)
         {
-            for (int b = 0; b < grids.Length; b++)
-                grids[b].Draw(_spriteBatch, colorclear,b,t);
-            //entitys[PLAYERENTITY].Draw(_spriteBatch, colorclear, Grid.PLAYERTEXTURENUM);           
-            for (int e = 0; e < entitys.Length; e++)
-                entitys[e].Draw(_spriteBatch, colorclear, entitys[e].imageNum);
+            Color colorForSelectRect = Color.DimGray;
 
-            if (anyGridHasMouse)
-            {             
-                grids[LocationsOfSelectedBlock[t].gridnum].DrawSelected(_spriteBatch,LocationsOfSelectedBlock[t]);
-                
+            if (visible)
+            {
+                for (int b = 0; b < grids.Length; b++)
+                    grids[b].Draw(_spriteBatch, colorclear, b, t);
+                ////entitys[PLAYERENTITY].Draw(_spriteBatch, colorclear, Grid.PLAYERTEXTURENUM);           
+                //for (int e = 0; e < entitys.Length; e++)
+                    //entitys[e].Draw(_spriteBatch, colorclear, entitys[e].imageNum);
+
+                if (anyGridHasMouse)
+                {
+                    grids[LocationsOfSelectedBlock[t].gridnum].DrawSelected(_spriteBatch, LocationsOfSelectedBlock[t]);
+
+                }
+                for (int b = 0; b < grids.Length; b++)
+                    grids[b].DrawCutLine(_spriteBatch, colorclear);
+                colorForSelectRect = new Color(180, 180, 180);
             }
-            for (int b = 0; b < grids.Length; b++)
-                grids[b].DrawCutLine(_spriteBatch, colorclear);
+            if (timeSelectBarHovering)
+                colorForSelectRect = new Color(150, 150, 150);
+
+            //draw SelctRect for Time
+            _spriteBatch.DrawRoundedRect(timeSelectBar, // The coordinates of the Rectangle to be drawn
+circle, // Texture for the whole rounded rectangle
+circle.Width / 2, // Distance from the edges of the texture to the "middle" patch
+colorForSelectRect);
+
 
             Rectangle timeRect = new Rectangle(timeBarRect.Location + new Point(0, timeBarRect.Height / 2 - 2 / 2), new Point(lengthpercircle * (amounOfCircles-1) +circle.Width, 2));
             
@@ -1223,6 +1271,9 @@ namespace SpaceTimeCut
                         _spriteBatch.Draw(Game1.BlocksTexture[Blocks[x, y]], blockRect.Location.ToVector2() + new Vector2(x *  blocksize, y *  blocksize), colorclear);
 
                 }
+            //Draw entitys here so that they get drawn in the right order
+            for (int e = 0; e < entitys.Length; e++)
+                entitys[e].Draw(_spriteBatch, colorclear, entitys[e].imageNum,t,b);
 
 
 

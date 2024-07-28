@@ -325,7 +325,7 @@ namespace SpaceTimeCut
             }
             else if (CurrentlyDisplaying == GAME)
             {
-                if (EscapeKey.CheckKeyPress())
+                if (EscapeKey.CheckKeyPress() || Shoot.CheckKeyPress())
                 {
                     PauseGame();
 
