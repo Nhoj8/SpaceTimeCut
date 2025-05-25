@@ -272,13 +272,13 @@ namespace SpaceTimeCut
 
                 level = new Level(blocksize);
                 //times[0].Initilize();
-                Blocks8x8 = new Texture2D[6];
+                Blocks8x8 = new Texture2D[7];
                 Blocks8x8[1] = Content.Load<Texture2D>("NewBlocks/Block");
                 Blocks8x8[2] = Content.Load<Texture2D>("NewBlocks/Air0");//actually 16x16
                 Blocks8x8[3] = Content.Load<Texture2D>("NewBlocks/Player0");
                 Blocks8x8[4] = Content.Load<Texture2D>("NewBlocks/Goal");
                 Blocks8x8[5] = Content.Load<Texture2D>("NewBlocks/Entity0");
-
+                Blocks8x8[6] = Content.Load<Texture2D>("NewBlocks/Corruption");
                 Texture2D[] PlayerTexture = new Texture2D[4];
                 for (int i = 0; i< 4; i++)
                 {
@@ -299,7 +299,13 @@ namespace SpaceTimeCut
                 {
                     PushableEntityTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/PushableEntity" + i.ToString()), Convert.ToDouble(blocksize) / 16);
                 }
-                Texture2D[][] NewEntityTextures = { PlayerTexture,PushableBlockTexture, EntityTexture, PushableEntityTexture };
+                Texture2D[] VoidEntityTexture = new Texture2D[4];
+
+                for (int i = 0; i < 4; i++)
+                {
+                    VoidEntityTexture[i] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("NewBlocks/Corruption"), Convert.ToDouble(blocksize) / 8);
+                }
+                Texture2D[][] NewEntityTextures = { PlayerTexture,PushableBlockTexture, EntityTexture, PushableEntityTexture ,VoidEntityTexture};
                 EntityTextures = NewEntityTextures;
                 //Button.NewButton(Button.MOVEBUTTON, "M", Button.TOPMIDDLE, -75, 75, false, 50, 50,true,Color.Green,Color.DarkOliveGreen);
                 //Button.NewButton(Button.ROTATEBUTTON, "R", Button.TOPMIDDLE, -25, 75, false, 50, 50, true, Color.Green, Color.DarkOliveGreen);
@@ -314,7 +320,7 @@ namespace SpaceTimeCut
                 for (int i = 0; i < 16; i++)
                 {
                     //BlocksTexture[i+6] = Content.Load<Texture2D>("Barriers/" + (i).ToString().PadLeft(2, '0'));
-                    BlocksTexture[i + 6] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("Barriers/" + (i).ToString().PadLeft(2, '0')), Convert.ToDouble(blocksize) / 16);
+                    BlocksTexture[i + Grid.FIRSTBARRIERNUM] = SpriteBatchExtensions.Resize(GraphicsDevice, Content.Load<Texture2D>("Barriers/" + (i).ToString().PadLeft(2, '0')), Convert.ToDouble(blocksize) / 16);
                 }
                 settingsButton.visible = true;
                 //Buttons[Button.SETTINGSBUTTON].visible = true;//SETTINGS BUTTON

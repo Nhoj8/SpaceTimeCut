@@ -25,13 +25,13 @@ namespace SpaceTimeCut
         public static int lengthpercircle = 80;
         public static int height = 16;
         public static int TotalamounOfCircles = 15;
-        
+
 
         //public static SpaceTimeLocation destination;// = new SpaceTimeLocation(0, 0, 1, 0);
         //public static SpaceTimeLocation location;// = new SpaceTimeLocation(0,0,0,0);
         //public static int directionOfMovement;
-        
-        public static int PLAYERENTITY = 0;
+
+        //public static int PLAYERENTITY = 0;
         public static float progress;
 
         public static int timeperblock = 30;
@@ -49,12 +49,14 @@ namespace SpaceTimeCut
 
         //things that shouldnt be static
         public static Time[] times;
-        public static Entity[] entitys;
-        public static Entity[] originalEntitys;
-        public static int currentCircle = 0;
+        public static EntityType[] entitys;
+        //public static Entity[] originalEntitys;
+        //public static int currentCircle = 0;
+
+        public static int numberOfEntitys;
 
 
-        
+
         public static LevelSelector[] levelSelectors;
         public static int levelNum;
         public static Button cutButton;
@@ -76,6 +78,7 @@ namespace SpaceTimeCut
             int G = Grid.MOVEABLEENTITYNUM + 1;
             int F = Grid.MOVEABLEENTITYNUM + 2;
             int T = Grid.MOVEABLEENTITYNUM + 3;
+            int V = Grid.VOID;
 
             //level 1
             int[,] level1 = {
@@ -107,7 +110,7 @@ namespace SpaceTimeCut
             //level 4
             int[,] level5 = {
 { B,B,B,B,B,B, B, B,B,B },
-{ B,P,A,A,A,A, A, A,O,B },
+{ P,A,A,A,A,A, A, A,O,B },
 { B,B,B,B,B,B, B, B,M,B },
 { B,A,A,A,A,R, D, A,A,B },
 { M,M,M,M,M,M, M, B,A,B },
@@ -115,7 +118,7 @@ namespace SpaceTimeCut
 { M,M,M,M,M,M, M, B,A,B },
 { M,M,M,M,M,M, M, B,A,B },
 { M,M,M,M,M,M, M, B,A,B },
-{ M,M,M,M,M,M, M, B,U,B },
+{ M,M,M,M,M,M, M, B,U,M },
 { M,M,M,M,M,M, M, M,U,M },
 };
             int[,] level6 = {
@@ -153,18 +156,42 @@ namespace SpaceTimeCut
 { M,B,M,B,B, B, B,B,M },
 { L,L,L,M,M, M, M,M,M },
 };
+            int[,] level10 = {
+{ A,B,B,B,B,B, B, B,B,B },
+{ P,A,A,A,A,A, A, A,O,B },
+{ A,B,A,A,A,A, A, D,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,A,B },
+{ A,B,A,A,A,A, A, B,U,B },
+{ A,B,B,B,B,B, B, B,B,B },
+};
+            int[,] level11 = {
+{ A,A,A,A,A,A, A, V,V,V },
+{ A,P,A,A,A,A, A, V,O,V },
+{ A,A,A,A,A,A, A, V,V,V },
+};
             int[,] leveltest = {
 { A,A,A,A,A,A, A, B,B,B },
 { A,P,M,M,M,M, A, A,O,B },
 { A,A,A,A,A,A, A, B,B,B },
 { A,A,A,H,A,F, A, B,B,B },
 };
-            int[][,] theBlocks = { level1, level2, level3, level4, level5, level6, level7,level8,level9,leveltest };
+            int[,] leveltest2 = {
+{ A,A,A,A,A,A, A },
+{ A,P,M,A,A,A, A },
+{ A,A,A,A,V,A, A },
+{ A,A,A,A,A,A, A },
+};
+
+            int[][,] theBlocks = { level1, level2, level3, level4, level5, level6, level7, level8, level9, level10, level11, leveltest,leveltest2 };
 
             levelSelectors = new LevelSelector[theBlocks.Length];
-            for(int i = 0; i < theBlocks.Length; i++)
+            for (int i = 0; i < theBlocks.Length; i++)
             {
-                levelSelectors[i] = new LevelSelector(i,ref theBlocks[i],theBlocks.Length);
+                levelSelectors[i] = new LevelSelector(i, ref theBlocks[i], theBlocks.Length);
             }
             moveButton = new Button("M", Button.TOPMIDDLE, -75, 75, moveButtonClick, false, 50, 50, false, Color.Green, Color.DarkOliveGreen);
             rotateButton = new Button("R", Button.TOPMIDDLE, -25, 75, rotateButtonClick, false, 50, 50, false, Color.Green, Color.DarkOliveGreen);
@@ -173,7 +200,7 @@ namespace SpaceTimeCut
 
         public Level(int blocksize)
         {
-            
+
             Level.blocksize = blocksize;
             totalCuts = 0;
             totalRotations = 0;
@@ -181,7 +208,7 @@ namespace SpaceTimeCut
             currentMaxCut = 2;
             progress = 0;
             timeBarHasMouse = false;
-            currentCircle = 0;
+            //currentCircle = 0;
             if (circle == null)
                 circle = SpriteBatchExtensions.Resize(Game1._graphics.GraphicsDevice, Game1.Getborders(Game1.CreateCircle(Game1._graphics.GraphicsDevice, 8), 1, Color.Black, 0, false), 2);
             times = new Time[1];
@@ -234,7 +261,7 @@ namespace SpaceTimeCut
         {
             anyGridHasMouse = false;
             for (int i = 0; i < times.Length; i++)
-                times[i].Update(mousePosition,i);
+                times[i].Update(mousePosition, i);
 
         }
         public void Press(Point MousePosition)
@@ -254,48 +281,62 @@ namespace SpaceTimeCut
         }
         public void MoveWithKEYS(Point movement)
         {
-            entitys[PLAYERENTITY].MoveWithKEYS(movement,ref entitys[PLAYERENTITY].location,ref entitys[PLAYERENTITY].destination);
+            //entitys[PLAYERENTITY].MoveWithKEYS(movement, ref entitys[PLAYERENTITY].location, ref entitys[PLAYERENTITY].destination);
         }
         public void MoveTime()
         {
             progress += 1 / (float)timeperblock;
             if (progress >= 1)
             {
-                
+
                 NextTimeUnit();
             }
         }
-        public static void NextTimeUnit()
+
+        public static void NextTimeUnit(int timeToCall = -1)
         {
-            currentCircle += 1;
+            
+                for (int t = 0; t < times.Length; t++)
+                {
+                    times[t].currentCircle++;// currentCircle += 1;
+                }
             progress = 0;
             for (int i = 0; i < entitys.Length; i++)
-            //for (int i = entitys.Length-1; i >=0; i--)
             {
                 entitys[i].UpdateLocation(i);
             }
             for (int i = 0; i < entitys.Length; i++)
-            //for (int i = entitys.Length - 1; i >= 0; i--)
             {
-                
-                entitys[i].Move(i);
+                entitys[i].CheckIfWin();
             }
+            //entitys[PLAYERENTITY].CheckIfWin();
+            for (int t = 0; t < times.Length; t++)
+            {
+                if (times[t].currentCircle >= times[t].amounOfCircles)
+                    continue;
+                for (int i = 0; i < entitys.Length; i++)
+                {
+
+                    entitys[i].Move(i, t);
+                }
+            }
+
         }
         public static SpaceTimeLocation[] GetAllLocationsOfOriginalPoint(SpaceTimeLocation original)//original is in normal Coordinates not orignial
         {
             SpaceTimeLocation[] LocationsOfOriginalPoint = new SpaceTimeLocation[times.Length];
             Point originalPoint = times[original.time].grids[original.gridnum].GetOriginalLocationOfPoint(original.coords);
-            for (int i = 0;i < times.Length; i++)
+            for (int i = 0; i < times.Length; i++)
             {
                 LocationsOfOriginalPoint[i].time = i;
                 if (i == original.time)
                 {
                     LocationsOfOriginalPoint[i] = original;
-                    
+
                 }
                 else
                 {
-                    LocationsOfOriginalPoint[i] = times[i].GetLocationFromOriginalPoint(originalPoint , i);
+                    LocationsOfOriginalPoint[i] = times[i].GetLocationFromOriginalPoint(originalPoint, i);
                 }
 
             }
@@ -311,8 +352,6 @@ namespace SpaceTimeCut
                 times[t].Draw(_spriteBatch, colorclear, t);
 
 
-
-            
         }
 
         public struct SpaceTimeLocation
@@ -368,7 +407,7 @@ namespace SpaceTimeCut
         int levelNum;
         public int[,] blocks;
         public Button button;
-        public LevelSelector(int levelNum,ref int[,] blocks,int amountOfLevels)
+        public LevelSelector(int levelNum, ref int[,] blocks, int amountOfLevels)
         {
             this.levelNum = levelNum;
             this.blocks = blocks;
@@ -378,14 +417,14 @@ namespace SpaceTimeCut
             int buttonMargin = 10;
             //for (int i = 0; i < amountOfButtons; i++)
             //{
-            button = new Button((levelNum+1).ToString(), Button.TOPMIDDLE,-amountOfLevels*buttonWidth/2-(amountOfLevels-1)*buttonMargin/2 +buttonWidth * levelNum + buttonMargin * (levelNum-1), 200,Click, false, buttonWidth, buttonWidth,true);
-            
+            button = new Button((levelNum + 1).ToString(), Button.TOPMIDDLE, -amountOfLevels * buttonWidth / 2 - (amountOfLevels - 1) * buttonMargin / 2 + buttonWidth * levelNum + buttonMargin * (levelNum - 1), 200, Click, false, buttonWidth, buttonWidth, true);
+
             //}
         }
-       
+
         void Click(object sender, EventArgs e)
         {
-            for(int i = 0; i < levelSelectors.Length; i++)
+            for (int i = 0; i < levelSelectors.Length; i++)
             {
                 levelSelectors[i].button.visible = false;
             }
@@ -395,26 +434,34 @@ namespace SpaceTimeCut
         }
     }
 
-    
+
 
     public class Time
     {
-        
 
-        
+
+
 
         public Rectangle timeBarRect;
         public int starttime = 0;
-        public int amounOfCircles =TotalamounOfCircles;
+        public int amounOfCircles = TotalamounOfCircles;
 
         public int cutLocation = -1;
 
         public Grid[] grids;
+        public int currentCircle = 0;
         int circleHovering = -1;
         int circleSelected = -1;
 
-        
-        
+        Rectangle timeSelectBar;
+        bool timeSelectBarHovering;
+        public bool visible = true;
+
+        //public Entity[] originalEntitys;
+
+
+
+
 
         public void Initilize(ref int[,] theBlocks)
         {
@@ -428,8 +475,9 @@ namespace SpaceTimeCut
             //destination =
             grids[0].Initilize(ref theBlocks);
             //location = destination;
-            
+
             TimeBarRefersh();
+            currentCircle = 0;
         }
         //public void Move(Point movement)
         //{
@@ -450,7 +498,7 @@ namespace SpaceTimeCut
         public bool Press(int t, Point MousePosition)
         {
             bool hasMouse = false;//if anything in this time Contains the mouse
-            if (timeBarRect.Contains(MousePosition))
+            if (timeBarRect.Contains(MousePosition) && !timeSelectBarHovering)
             {
 
                 if (cutLocation > -1)
@@ -460,6 +508,13 @@ namespace SpaceTimeCut
                 hasMouse = true;
                 return hasMouse;
             }
+            if (timeSelectBarHovering)
+            {
+                hasMouse = true;
+                visible = !visible;
+                return hasMouse;
+            }
+
 
 
             for (int i = grids.Length - 1; i > -1; i--)
@@ -475,15 +530,15 @@ namespace SpaceTimeCut
 
                     else if (Level.IsCutting)
                     {
-                        grids[i].Cut(t,i);
+                        grids[i].Cut(t, i);
                         break;
                     }
                     else if (Level.IsRotating)
                     {
-                        grids[i].Rotate(t,i);
+                        grids[i].Rotate(t, i);
                         break;
                     }
-                    
+
 
 
                 }
@@ -493,69 +548,90 @@ namespace SpaceTimeCut
 
         void SelectTime(int t)
         {
-            
+
             for (int i = 0; i < times.Length; i++)
             {
-                times[i].circleSelected = -1;
+                times[i].circleSelected = circleHovering;//-1;
+                times[i].circleHovering = circleHovering;
+                times[i].currentCircle = 0;
             }
-            circleSelected = circleHovering;
-            currentCircle = 0;
-            entitys = new Entity[originalEntitys.Length];
-            for(int i = 0; i < entitys.Length; i++)
+            //circleSelected = circleHovering;
+            //currentCircle = 0;
+            for (int i = 0; i < entitys.Length; i++)
             {
-                entitys[i] = originalEntitys[i].GetCopy();
-                SpaceTimeLocation currentLocation= times[entitys[i].location.time].GetLocationFromOriginalPoint(entitys[i].location.coords, entitys[i].location.time);
-                int rotationAmount = times[currentLocation.time].grids[currentLocation.gridnum].rotation;
-                entitys[i].DirectionOfMoveRotate(rotationAmount);
-                entitys[i].location = currentLocation;
-                SpaceTimeLocation currentDestination = times[entitys[i].destination.time].GetLocationFromOriginalPoint(entitys[i].destination.coords, entitys[i].destination.time);
-                entitys[i].destination = currentDestination;
-                
+                entitys[i].SelectTime(t, circleSelected);
             }
-            int timeSelected = circleSelected + starttime;
-            for(int i = 0; i < timeSelected; i++)
+
+
+
+
+            //entitys = new Entity[originalEntitys.Length];
+            //for (int i = 0; i < entitys.Length; i++)
+            //{
+            //    entitys[i] = originalEntitys[i].GetCopy();
+            //    SpaceTimeLocation currentLocation = times[entitys[i].location.time].GetLocationFromOriginalPoint(entitys[i].location.coords, entitys[i].location.time);
+            //    int rotationAmount = times[currentLocation.time].grids[currentLocation.gridnum].rotation;
+            //    entitys[i].DirectionOfMoveRotate(rotationAmount);
+            //    entitys[i].location = currentLocation;
+            //    SpaceTimeLocation currentDestination = times[entitys[i].destination.time].GetLocationFromOriginalPoint(entitys[i].destination.coords, entitys[i].destination.time);
+            //    entitys[i].destination = currentDestination;
+
+            //}
+            //int timeSelected = circleSelected + starttime;
+            for (int i = 0; i < circleSelected; i++)
             {
-                NextTimeUnit();
+                NextTimeUnit(t);
             }
             progress = 1;
         }
         void TimeBarRefersh()
         {
             timeBarRect = new Rectangle(Button.PositionAnchors[Button.BOTTOMMIDDLE].ToPoint() + new Point((starttime) * lengthpercircle, -100) - new Point(lengthpercircle * (TotalamounOfCircles - 1) / 2, height / 2), new Point(lengthpercircle * (amounOfCircles - 1) + circle.Width, height));
+            int BarThickness = 10;
+            timeSelectBar = new Rectangle(Button.PositionAnchors[Button.BOTTOMMIDDLE].ToPoint() + new Point((starttime) * lengthpercircle - BarThickness, -100 - BarThickness) - new Point(lengthpercircle * (TotalamounOfCircles - 1) / 2, height / 2), new Point(lengthpercircle * (amounOfCircles - 1) + circle.Width + BarThickness * 2, height + BarThickness * 2));
 
         }
-
-        public void Update(Point MousePosition,int t)
+        public void Update(Point MousePosition, int t)
         {
             TimeBarRefersh();
             timeBarHasMouse = false;
+            timeSelectBarHovering = false;
             circleHovering = -1;
             cutLocation = -1;
-            if (timeBarRect.Contains(MousePosition))
+            if (timeSelectBar.Contains(MousePosition))
             {
-                timeBarHasMouse = true;
+                timeSelectBarHovering = true;
 
-                for (int i = 0; i < amounOfCircles; i++)
+                if (timeBarRect.Contains(MousePosition))
                 {
-                    if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i), 0), circle.Bounds.Size).Contains(MousePosition))
+                    timeBarHasMouse = true;
+
+                    for (int i = 0; i < amounOfCircles; i++)
                     {
-                        circleHovering = i;
-                        break;
-                    }
-                    else if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i + circle.Width), 0), new Point((int)(lengthpercircle - circle.Width), circle.Height)).Contains(MousePosition)&& IsCutting)
-                    {
-                        cutLocation = i;
-                        break;
+                        if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i), 0), circle.Bounds.Size).Contains(MousePosition))
+                        {
+                            circleHovering = i;
+                            timeSelectBarHovering = false;
+                            break;
+                        }
+                        else if (new Rectangle(timeBarRect.Location + new Point((int)(lengthpercircle * i + circle.Width), 0), new Point((int)(lengthpercircle - circle.Width), circle.Height)).Contains(MousePosition) && IsCutting)
+                        {
+                            cutLocation = i;
+                            timeSelectBarHovering = false;
+                            break;
+                        }
                     }
                 }
             }
             for (int i = 0; i < grids.Length; i++)
-                grids[i].Update(MousePosition,t,i);
+                grids[i].Update(MousePosition, t, i);
+
         }
         void Cut(int t)
         {
             Array.Resize(ref times, times.Length + 1);
             Time newTime = (Time)this.MemberwiseClone();
+            newTime.currentCircle = currentCircle - cutLocation < 0 ? 0: currentCircle - cutLocation;
             newTime.grids = new Grid[grids.Length];
 
             for (int i = 0; i < grids.Length; i++)
@@ -570,33 +646,70 @@ namespace SpaceTimeCut
             amounOfCircles = cutLocation + 1;
             newTime.amounOfCircles -= cutLocation + 1;
             newTime.starttime = starttime + cutLocation + 1;
-            //if (t == location.time)
-            //{
-            //    //THIS IS FOR MAKING PLAYER IN OTHER TIME A GRAY BLOCK
-            //    // times[ times.Length - 1].grids[location.gridnum].Blocks[location.X, location.Y] =1;
-            //    ////Level.player = -1;
-            //}
+
+
+            //Array.Resize(ref entitys, numberOfEntitys * times.Length);
+
             if (t < times.Length - 2)//if the time that was cut is not the last time
             {
-                Time oldTime = times[t + 1];
-                times[t + 1] = newTime;
-                for (int i = t + 2; i < times.Length; i++)
+
+                for (int i = times.Length - 1; i > t + 1; i--)
                 {
-                    Time holdTime = times[i];
-                    times[i] = oldTime;
-                    oldTime = holdTime;
+                    times[i] = times[i - 1];
                 }
+                times[t + 1] = newTime;
+
             }
             else
                 times[times.Length - 1] = newTime;
+
+            // for (int e = (t) * numberOfEntitys; e < (t + 1) * numberOfEntitys; e++)
+            // {
+            //     entitys[e +  numberOfEntitys] = entitys[e].GetCopy();
+            //     entitys[e + numberOfEntitys].active = false;
+            //     times[t+1].originalEntitys[e - t* numberOfEntitys] = entitys[e + numberOfEntitys].GetCopy();
+
+            //     for(int r = 0; r < times.Length; r++)
+            //     {
+            //         if (r == t + 1)//if checking newly created one
+            //             continue;
+            //         if(entitys[e + r * numberOfEntitys].destination.time == t && cutLocation <= currentCircle)
+            //         {
+            //             entitys[e + numberOfEntitys] = entitys[e + r * numberOfEntitys].GetCopy();
+            //             entitys[e + numberOfEntitys].location.time++;
+            //             entitys[e + numberOfEntitys].destination.time++;
+            //             times[t + 1].originalEntitys[e - t * numberOfEntitys] = entitys[e + numberOfEntitys].GetCopy();
+            //             entitys[e + r * numberOfEntitys].active = false;
+            //             entitys[e + numberOfEntitys].active = true;
+
+            //         }
+            //     }
+
+            // }
+
+
             totalCuts++;
+
+
+            for (int e = 0; e < entitys.Length; e++)
+            {
+                entitys[e].cutTime(e,t,cutLocation,currentCircle);
+            }
+
+            if (cutLocation <= currentCircle)
+            {
+                circleHovering = cutLocation;
+                SelectTime(t);
+            }
+                
+
 
         }
         public SpaceTimeLocation GetLocationFromOriginalPoint(Point originalPoint, int t)
         {
             SpaceTimeLocation locationInThisInstance = new SpaceTimeLocation();
             locationInThisInstance.time = t;
-            for (int i = 0; i < grids.Length;i++)
+            for (int i = 0; i < grids.Length; i++)
             {
 
                 Rectangle area = new Rectangle(grids[i].originalLocation, new Point(grids[i].Blocks.GetLength(0), grids[i].Blocks.GetLength(1)));
@@ -635,7 +748,7 @@ namespace SpaceTimeCut
             return locationInThisInstance;
 
 
-            }
+        }
 
 
         void ApplyOffset(Vector2 offset)
@@ -646,31 +759,46 @@ namespace SpaceTimeCut
 
         public void Draw(SpriteBatch _spriteBatch, Color colorclear, int t)
         {
-            for (int b = 0; b < grids.Length; b++)
-                grids[b].Draw(_spriteBatch, colorclear,b,t);
-            //entitys[PLAYERENTITY].Draw(_spriteBatch, colorclear, Grid.PLAYERTEXTURENUM);           
-            for (int e = 0; e < entitys.Length; e++)
-                entitys[e].Draw(_spriteBatch, colorclear, entitys[e].imageNum);
+            Color colorForSelectRect = Color.DimGray;
 
-            if (anyGridHasMouse)
-            {             
-                grids[LocationsOfSelectedBlock[t].gridnum].DrawSelected(_spriteBatch,LocationsOfSelectedBlock[t]);
-                
+            if (visible)
+            {
+                for (int b = 0; b < grids.Length; b++)
+                    grids[b].Draw(_spriteBatch, colorclear, b, t);
+                ////entitys[PLAYERENTITY].Draw(_spriteBatch, colorclear, Grid.PLAYERTEXTURENUM);           
+                //for (int e = 0; e < entitys.Length; e++)
+                //entitys[e].Draw(_spriteBatch, colorclear, entitys[e].imageNum);
+
+                if (anyGridHasMouse)
+                {
+                    grids[LocationsOfSelectedBlock[t].gridnum].DrawSelected(_spriteBatch, LocationsOfSelectedBlock[t]);
+
+                }
+                for (int b = 0; b < grids.Length; b++)
+                    grids[b].DrawCutLine(_spriteBatch, colorclear);
+                colorForSelectRect = new Color(180, 180, 180);
             }
-            for (int b = 0; b < grids.Length; b++)
-                grids[b].DrawCutLine(_spriteBatch, colorclear);
+            if (timeSelectBarHovering)
+                colorForSelectRect = new Color(150, 150, 150);
 
-            Rectangle timeRect = new Rectangle(timeBarRect.Location + new Point(0, timeBarRect.Height / 2 - 2 / 2), new Point(lengthpercircle * (amounOfCircles-1) +circle.Width, 2));
-            
-            
+            //draw SelctRect for Time
+            _spriteBatch.DrawRoundedRect(timeSelectBar, // The coordinates of the Rectangle to be drawn
+circle, // Texture for the whole rounded rectangle
+circle.Width / 2, // Distance from the edges of the texture to the "middle" patch
+colorForSelectRect);
+
+
+            Rectangle timeRect = new Rectangle(timeBarRect.Location + new Point(0, timeBarRect.Height / 2 - 2 / 2), new Point(lengthpercircle * (amounOfCircles - 1) + circle.Width, 2));
+
+
             //float deltaX = (float)(lengthpercircle * (TotalamounOfCircles-1))/ (TotalamounOfCircles - 1);
             for (int i = 0; i < amounOfCircles; i++)
             {
                 Color color = colorclear;
-                if (i+ starttime <= currentCircle)
+                if (i <=currentCircle)//+ starttime <= currentCircle)
                 {
-                    if (i + starttime == currentCircle) 
-                        color = new Color(1- progress, 1-progress*0.5f, 1 - progress);
+                    if (i ==currentCircle)//+ starttime == currentCircle)
+                        color = new Color(1 - progress, 1 - progress * 0.5f, 1 - progress);
 
                     else
                         color = Color.Green;
@@ -679,12 +807,12 @@ namespace SpaceTimeCut
                     color = Color.Red;
                 else if (i == circleSelected)
                     color = Color.Orange;
-                
+
                 _spriteBatch.Draw(circle, timeBarRect.Location.ToVector2() + new Vector2((int)(lengthpercircle * i), 0), color);
             }
 
             if (cutLocation > -1)
-                Game1.DrawRectangle(_spriteBatch, new Rectangle(timeBarRect.Location + new Point((int)(cutLocation* lengthpercircle + lengthpercircle / 2 + circle.Width/2),0), new Point(2, timeBarRect.Height)), colorclear);
+                Game1.DrawRectangle(_spriteBatch, new Rectangle(timeBarRect.Location + new Point((int)(cutLocation * lengthpercircle + lengthpercircle / 2 + circle.Width / 2), 0), new Point(2, timeBarRect.Height)), colorclear);
             Game1.DrawRectangle(_spriteBatch, timeRect, Color.Red);
         }
 
@@ -700,19 +828,23 @@ namespace SpaceTimeCut
         public static int MOVABLEWALL = 1;
         public static int PLAYERTYPE = 3;
         public static int PLAYERTEXTURENUM = 0;
-        public static int PUSHABLEBLOCKTEXTURENUM=1;
+        public static int PUSHABLEBLOCKTEXTURENUM = 1;
         public static int ENTITYTEXTURENUM = 2;
         public static int PUSHABLEENTITYTEXTURENUM = 3;
         //public static int ENTITYTYPE = 5;
+        public static int VOIDENTITYTEXTURENUM = 4;
+
+        public static int VOID = 6;
         public static int AIR = 2;
         public static int GOAL = 4;
-        public static int ENTITYNUM = 23;
+        public static int FIRSTBARRIERNUM = 7;//Have to change the images in blocktexturs to change this
+        public static int BARRIER = FIRSTBARRIERNUM +16;
+        public static int ENTITYNUM = BARRIER+1;
         public static int MOVEABLEENTITYNUM = ENTITYNUM + 4;//Four Directions;
-        public static int BARRIER = 22;
-        static int FIRSTBARRIERNUM = 6;//Have to change the images in blocktexturs to change this
-        static int[] barrierRotation = { 0, 1, 2, 3, 4, 5, 1 +FIRSTBARRIERNUM, 2 + FIRSTBARRIERNUM, 4 + FIRSTBARRIERNUM, 3 + FIRSTBARRIERNUM, 0 + FIRSTBARRIERNUM, 7 + FIRSTBARRIERNUM, 9 + FIRSTBARRIERNUM, 10 + FIRSTBARRIERNUM, 5 + FIRSTBARRIERNUM, 6 + FIRSTBARRIERNUM, 8 + FIRSTBARRIERNUM, 15 + FIRSTBARRIERNUM, 12 + FIRSTBARRIERNUM, 11 + FIRSTBARRIERNUM, 13 + FIRSTBARRIERNUM, 14 + FIRSTBARRIERNUM };
-        public static int[] Sin = { 0, 1, 0, -1, 0, 1, 0, -1,0 };//Last One zero for both sin and cos so that when 8 is put in direction is zero
-        public static int[] Cos = {1, 0, -1, 0, 1, 0, -1,0,0 };
+        static int[] barrierRotation = { 0, 1, 2, 3, 4, 5,6, 0 + FIRSTBARRIERNUM, 2 + FIRSTBARRIERNUM, 4 + FIRSTBARRIERNUM, 6 + FIRSTBARRIERNUM, 8 + FIRSTBARRIERNUM, 10 + FIRSTBARRIERNUM, 12 + FIRSTBARRIERNUM, 14 + FIRSTBARRIERNUM, 1 + FIRSTBARRIERNUM, 3 + FIRSTBARRIERNUM, 5 + FIRSTBARRIERNUM, 7 + FIRSTBARRIERNUM, 9 + FIRSTBARRIERNUM, 11 + FIRSTBARRIERNUM, 13 + FIRSTBARRIERNUM, 15 + FIRSTBARRIERNUM }; public static int[] Sin = { 0, 1, 0, -1, 0, 1, 0, -1, 0 };//Last One zero for both sin and cos so that when 8 is put in direction is zero
+
+        
+        public static int[] Cos = { 1, 0, -1, 0, 1, 0, -1, 0, 0 };
         public static int ZERODIRECTION = 8;
         //public static Point playerPos = new Point(0,0);
 
@@ -748,102 +880,14 @@ namespace SpaceTimeCut
         {
             //Random random = new Random();
             originalLocation = new Point(0, 0);
-            //int B = BARRIER;
-            //int M = MOVABLEWALL;
-            //int G = GOAL;
-            //int A = AIR;
-            //int P = PLAYERTYPE;
-            //int R = ENTITYNUM;
-            //int D = ENTITYNUM + 1;
-            //int L = ENTITYNUM + 2;
-            //int U = ENTITYNUM + 3;
-            
-            //int[,] theBlocks = {
 
-            //    {P,A,A,A,A,A, A, B,B,B },
-            //    {B,B,B,B,B,B, A, B,A,B },
-            //    {R,A,A,A,A,A, A, A,A,B },
-            //    {A,B,B,B,B,B, B, A,B,B },
-            //    {A,A,A,A,B,A, A, A,A,A },
-            //    {B,B,B,A,B,A, B, B,B,A },
-            //    {B,A,A,A,B,A, B, B,A,A },
-            //    {B,B,A,B,A,A, B, A,B,A },
-            //    {A,A,A,B,A,B, B, A,B,A },
-            //    {A,B,B,B,A,A, A, A,B,G }
-            //};
-            ////theBlocks = {
-
-            //level 1
-            //{ B,B,B,B,A,B, A, B,B,B },
-            //        { B,B,B,B,A,B, A, B,G,B },
-            //        { P,A,A,A,A,B, A, B,A,B },
-            //        { B,B,B,B,B,B, A, B,A,B },
-            //    };
-            //level 2
-            //{ B,B,B,A,A,A, B, A,B,B },
-            //        { B,P,A,A,A,A, A, M,G,B },
-            //        { B,B,B,A,A,A, B, A,B,B },
-            //        { B,R,A,A,A,A, A, A,B,B },
-            //        { B,B,B,A,A,A, B, B,B,B },
-            //    };
-            //level 3
-            //{ B,B,B,A},
-            //        { B,P,A,M},
-            //        { B,B,B,M},
-            //        { B,R,G,M},
-            //        { B,B,B,M},
-            //    };
-            //level 4
-            //{ B,B,B,B,B,B, B, B,B,B },
-            //{ B,P,A,A,A,A, A, A,G,B },
-            //{ B,B,B,B,B,B, B, B,M,B },
-            //{ B,A,A,A,A,R, D, A,A,B },
-            //{ M,M,M,M,M,M, M, B,A,B },
-            //{ M,M,M,M,M,M, M, B,A,B },
-            //{ M,M,M,M,M,M, M, B,A,B },
-            //{ M,M,M,M,M,M, M, B,A,B },
-            //{ M,M,M,M,M,M, M, B,U,B },
-            //{ M,M,M,M,M,M, M, M,U,M },
-            //};
-
-            //{ P,R,R,R,R,B, A, B,A,B },
-            //        { R,R,R,R,R,B, A, B,G,A },
-            //        { R,R,R,R,R,A, A, A,A,A },
-            //        { B,B,A,A,B,B, A, B,A,B },
-            //    };
-            //int x, y;//return x, y is useless
             ParseLevel(theBlocks);
 
-        //int x = 10, y = 10;
-        //Blocks = new int[x, y];
-        //for (int i = 0; i < x; i++)
-        //    for (int b = 0; b < y; b++)
-        //    //if (i == 0 || i == x - 1 || b == 0 || b == y - 1)
-        //    //    Blocks[i, b] = 1;
-        //    //else
-        //    {
-        //        int rand = random.Next(1, 6);
-        //        if (rand == 1)
-        //            Blocks[i, b] = M;
-        //        else if (rand == 5)
-        //            Blocks[i, b] = R;// 2;
-        //        else if (rand == 2)
-        //            Blocks[i, b] = B;// 2;
-        //        else
-        //            Blocks[i, b] = A;
-        //    }
 
 
-
-        //Blocks[0, 0] = P;
-        //Blocks[9, 9] = G;
-
-        position = new Vector2(-Blocks.GetLength(0) *  blocksize / 2, -Blocks.GetLength(1) *  blocksize / 2);
+            position = new Vector2(-Blocks.GetLength(0) * blocksize / 2, -Blocks.GetLength(1) * blocksize / 2);
             GetRect();
-            //SpaceTimeLocation location = new SpaceTimeLocation();
-            //location.time = 0;
-            //location.gridnum = 0;
-            //location.coords =
+
             CleanUpWallsAndEntitys();
 
             return;// location;
@@ -858,7 +902,7 @@ namespace SpaceTimeCut
                 {
                     Blocks[i, b] = theBlocks[b, i];
                 }
-                    
+
             return; //return amount of en
         }
         public Grid GetCopy()
@@ -867,7 +911,7 @@ namespace SpaceTimeCut
         }
         public void GetRect()
         {
-            blockRect = new Rectangle(Game1.middleposition.ToPoint() + position.ToPoint(), new Point(Blocks.GetLength(0) *  blocksize, Blocks.GetLength(1) *  blocksize));
+            blockRect = new Rectangle(Game1.middleposition.ToPoint() + position.ToPoint(), new Point(Blocks.GetLength(0) * blocksize, Blocks.GetLength(1) * blocksize));
 
         }
         public void Connect()
@@ -877,56 +921,57 @@ namespace SpaceTimeCut
         public void Move(Point movement, ref SpaceTimeLocation location, ref SpaceTimeLocation destination)
         {
 
-            
-            if (movement.X +  location.X >= 0 && movement.Y +  location.Y >= 0 && movement.X +  location.X < Blocks.GetLength(0) && movement.Y +  location.Y < Blocks.GetLength(1))
+
+            if (movement.X + location.X >= 0 && movement.Y + location.Y >= 0 && movement.X + location.X < Blocks.GetLength(0) && movement.Y + location.Y < Blocks.GetLength(1))
             {
-                if (Blocks[ location.X + movement.X,  location.Y + movement.Y] == AIR || Blocks[ location.X + movement.X,  location.Y + movement.Y] == GOAL)
+                if (Blocks[location.X + movement.X, location.Y + movement.Y] == AIR || Blocks[location.X + movement.X, location.Y + movement.Y] == GOAL)
                 {
 
-                     destination =  location + movement;
+                    destination = location + movement;
                 }
 
             }
             else
             {
-                for (int t = 0; t <  times.Length; t++)
-                    for (int i = 0; i <  times[t].grids.Length; i++)
+                for (int t = 0; t < times.Length; t++)
+                    for (int i = 0; i < times[t].grids.Length; i++)
                     {
-                        if ((i !=  location.gridnum || t !=  location.time) && ! times[t].grids[i].IsGrabbed && !times[location.time].grids[location.gridnum].IsGrabbed && RectanglesShareLine(blockRect,  times[t].grids[i].blockRect))
+                        if ((i != location.gridnum || t != location.time) && !times[t].grids[i].IsGrabbed && !times[location.time].grids[location.gridnum].IsGrabbed && RectanglesShareLine(blockRect, times[t].grids[i].blockRect))
                         {
-                            Rectangle Otherrect = new Rectangle(( times[t].grids[i].blockRect.Location - blockRect.Location),  times[t].grids[i].blockRect.Size);
-                            if (Otherrect.X % blocksize == 0 && Otherrect.Y % blocksize == 0 && Otherrect.Contains((movement +  location.coords) * new Point( blocksize,  blocksize)) && ( times[t].grids[i].Blocks[ location.X + movement.X - Otherrect.X /  blocksize,  location.Y + movement.Y - Otherrect.Y /  blocksize] == AIR||  times[t].grids[i].Blocks[ location.X + movement.X - Otherrect.X /  blocksize,  location.Y + movement.Y - Otherrect.Y /  blocksize] == GOAL))
+                            Rectangle Otherrect = new Rectangle((times[t].grids[i].blockRect.Location - blockRect.Location), times[t].grids[i].blockRect.Size);
+                            if (Otherrect.X % blocksize == 0 && Otherrect.Y % blocksize == 0 && Otherrect.Contains((movement + location.coords) * new Point(blocksize, blocksize)) && (times[t].grids[i].Blocks[location.X + movement.X - Otherrect.X / blocksize, location.Y + movement.Y - Otherrect.Y / blocksize] == AIR || times[t].grids[i].Blocks[location.X + movement.X - Otherrect.X / blocksize, location.Y + movement.Y - Otherrect.Y / blocksize] == GOAL))
                             {
 
                                 //index out of array
 
-                                 destination =  location + (movement - Otherrect.Location / new Point( blocksize,  blocksize));
-                                 destination.gridnum = i;
-                                 destination.time = t;
+                                destination = location + (movement - Otherrect.Location / new Point(blocksize, blocksize));
+                                destination.gridnum = i;
+                                destination.time = t;
                                 //FOR DIRECTION OF MULTIPLE TIMES
                                 // times[t].directionOfMovement =  times[ location.time].directionOfMovement;
 
-                                t =  times.Length;//or just return
+                                t = times.Length;//or just return
 
                                 break;
                             }
                         }
                     }
             }
-            if ( currentCircle >=  times[ destination.time].amounOfCircles +  times[ destination.time].starttime &&  destination.time + 1 <  times.Length)
-            {
-                
-                    destination.time++;
+            //TO MAKE IT MOVE TO FUTURE
+            //if (currentCircle >= times[destination.time].amounOfCircles + times[destination.time].starttime && destination.time + 1 < times.Length)
+            //{
 
-                //index out of bounds
-                if ( times[ destination.time].grids.Length <=  location.gridnum ||  times[ destination.time-1].grids[ destination.gridnum].originalLocation !=  times[ destination.time].grids[ destination.gridnum].originalLocation||  times[ destination.time].grids[ destination.gridnum].rotation !=  times[ destination.time-1].grids[ destination.gridnum].rotation ||  times[ destination.time].grids[ destination.gridnum].Blocks.GetLength(0) <=  destination.X ||  times[ destination.time].grids[ destination.gridnum].Blocks.GetLength(1) <=  destination.Y)
-                {//length of destination does not contain gridnum                               //orignial loctaion not the same                                                                        //rotation not the smae                                                                    //length of gridnum smaller than x location//needs rotation check                                                  ////length of gridnum smaller than y location//needs rotation check
-                    
-                    Point OriginalLocationOfPoint = times[destination.time - 1].grids[destination.gridnum].GetOriginalLocationOfPoint(destination.coords);//gets where the entity would be if there had been no rotations or cuts
-                    destination = times[destination.time].GetLocationFromOriginalPoint(OriginalLocationOfPoint,destination.time);//from the orginalLocation, gets the place where it would be now
-                    
-                }
-            }
+            //    destination.time++;
+
+            //    //index out of bounds
+            //    if (times[destination.time].grids.Length <= location.gridnum || times[destination.time - 1].grids[destination.gridnum].originalLocation != times[destination.time].grids[destination.gridnum].originalLocation || times[destination.time].grids[destination.gridnum].rotation != times[destination.time - 1].grids[destination.gridnum].rotation || times[destination.time].grids[destination.gridnum].Blocks.GetLength(0) <= destination.X || times[destination.time].grids[destination.gridnum].Blocks.GetLength(1) <= destination.Y)
+            //    {//length of destination does not contain gridnum                               //orignial loctaion not the same                                                                        //rotation not the smae                                                                    //length of gridnum smaller than x location//needs rotation check                                                  ////length of gridnum smaller than y location//needs rotation check
+
+            //        Point OriginalLocationOfPoint = times[destination.time - 1].grids[destination.gridnum].GetOriginalLocationOfPoint(destination.coords);//gets where the entity would be if there had been no rotations or cuts
+            //        destination = times[destination.time].GetLocationFromOriginalPoint(OriginalLocationOfPoint, destination.time);//from the orginalLocation, gets the place where it would be now
+
+            //    }
+            //}
 
         }
 
@@ -977,7 +1022,7 @@ namespace SpaceTimeCut
             position += speed;
             if (speed.X != 0 || speed.Y != 0)
             {
-                speed.X *= speed.X > 0.01f? 0.75f :0f;
+                speed.X *= speed.X > 0.01f ? 0.75f : 0f;
 
                 speed.Y *= speed.Y > 0.01f ? 0.75f : 0f;
 
@@ -1001,27 +1046,27 @@ namespace SpaceTimeCut
                     IsCutLine = true;
                     int roundedX = (int)Math.Round((float)relativeMouse.X / blocksize);
                     int roundedY = (int)Math.Round((float)relativeMouse.Y / blocksize);
-                    if (roundedX > 0 && roundedX < blockRect.Width /  blocksize && Math.Abs(roundedX *  blocksize - relativeMouse.X) <= Math.Abs(roundedY *  blocksize - relativeMouse.Y))
+                    if (roundedX > 0 && roundedX < blockRect.Width / blocksize && Math.Abs(roundedX * blocksize - relativeMouse.X) <= Math.Abs(roundedY * blocksize - relativeMouse.Y))
                     {
-                        CutLine = new Rectangle(blockRect.Location + new Point(roundedX *  blocksize - 1, 0), new Point(2, blockRect.Height));//vertical
+                        CutLine = new Rectangle(blockRect.Location + new Point(roundedX * blocksize - 1, 0), new Point(2, blockRect.Height));//vertical
                         cutLocation = roundedX;
                         isHorizontal = false;
                         IsValidCut = true;
                         for (int i = 0; i < Blocks.GetLength(1); i++)
-                            if (Blocks[roundedX-1,i] >= FIRSTBARRIERNUM && Blocks[roundedX, i] >= FIRSTBARRIERNUM)
+                            if (Blocks[roundedX - 1, i] >= FIRSTBARRIERNUM && Blocks[roundedX, i] >= FIRSTBARRIERNUM)
                             {
                                 IsValidCut = false;
                                 break;
                             }
                     }
-                    else if (roundedY > 0 && roundedY < blockRect.Height /  blocksize)
+                    else if (roundedY > 0 && roundedY < blockRect.Height / blocksize)
                     {
-                        CutLine = new Rectangle(blockRect.Location + new Point(0, roundedY *  blocksize - 1), new Point(blockRect.Width, 2));//horizontal
+                        CutLine = new Rectangle(blockRect.Location + new Point(0, roundedY * blocksize - 1), new Point(blockRect.Width, 2));//horizontal
                         cutLocation = roundedY;
                         isHorizontal = true;
                         IsValidCut = true;
                         for (int i = 0; i < Blocks.GetLength(0); i++)
-                            if (Blocks[i,roundedY-1] >= FIRSTBARRIERNUM && Blocks[i, roundedY] >= FIRSTBARRIERNUM)
+                            if (Blocks[i, roundedY - 1] >= FIRSTBARRIERNUM && Blocks[i, roundedY] >= FIRSTBARRIERNUM)
                             {
                                 IsValidCut = false;
                                 break;
@@ -1039,7 +1084,7 @@ namespace SpaceTimeCut
                 LocationsOfSelectedBlock = GetAllLocationsOfOriginalPoint(new SpaceTimeLocation(time, g, flooredX, flooredY));
 
             }
-            
+
         }
         public void Grab(Point MousePosition)
         {
@@ -1064,13 +1109,13 @@ namespace SpaceTimeCut
                 }
             for (int i = 0; i < entitys.Length; i++)
             {
-                entitys[i].Rotate(t,index, Blocks.GetLength(1));
+                entitys[i].Rotate(t, index, Blocks.GetLength(1));
             }
 
             Blocks = new int[Blocks.GetLength(1), Blocks.GetLength(0)];
             Blocks = newBlocks;
             int deltapos = Blocks.GetLength(1) - Blocks.GetLength(0);
-            position +=  blocksize / 2 * (new Vector2(deltapos, -deltapos));
+            position += blocksize / 2 * (new Vector2(deltapos, -deltapos));
             GetRect();
             //CleanUpWallsAndEntitys(1);
 
@@ -1080,19 +1125,19 @@ namespace SpaceTimeCut
         public void Cut(int t, int index)
         {
             float cutSpeed = 5;
-            if (cutLocation > 0&& IsValidCut)
+            if (cutLocation > 0 && IsValidCut)
             {
                 int x = Blocks.GetLength(0);
                 int y = Blocks.GetLength(1);
-                Array.Resize(ref  times[t].grids,  times[t].grids.Length + 1);
-                 times[t].grids[ times[t].grids.Length - 1] = new Grid();
+                Array.Resize(ref times[t].grids, times[t].grids.Length + 1);
+                times[t].grids[times[t].grids.Length - 1] = new Grid();
 
 
 
-                 times[t].grids[ times[t].grids.Length - 1].rotation = rotation;
+                times[t].grids[times[t].grids.Length - 1].rotation = rotation;
                 int totalRotation = (int)rotation + Convert.ToInt32(!isHorizontal);
                 Point translation;
-                ref Point ogGetter = ref  times[t].grids[ times[t].grids.Length - 1].originalLocation;
+                ref Point ogGetter = ref times[t].grids[times[t].grids.Length - 1].originalLocation;
                 ref Point ogConstant = ref originalLocation;
                 int length = isHorizontal ? y : x;
                 if (totalRotation == 2 || totalRotation == 3)
@@ -1101,8 +1146,8 @@ namespace SpaceTimeCut
                         translation = new Point(0, length);
                     else
                         translation = new Point(length, 0);
-                     ogGetter = ref originalLocation;
-                     ogConstant = ref  times[t].grids[ times[t].grids.Length - 1].originalLocation;
+                    ogGetter = ref originalLocation;
+                    ogConstant = ref times[t].grids[times[t].grids.Length - 1].originalLocation;
 
                 }
                 else
@@ -1115,7 +1160,7 @@ namespace SpaceTimeCut
                 ogGetter = originalLocation + new Point(Sin[totalRotation] * cutLocation, Cos[totalRotation] * cutLocation) + translation;
                 ogConstant = originalLocationSaved;
                 Game1.Chat.NewLine(totalRotation.ToString(), Game1.time);
-                Game1.Chat.NewLine( times[t].grids[ times[t].grids.Length - 1].originalLocation.ToString(), Game1.time);
+                Game1.Chat.NewLine(times[t].grids[times[t].grids.Length - 1].originalLocation.ToString(), Game1.time);
                 Game1.Chat.NewLine(originalLocation.ToString(), Game1.time);
 
 
@@ -1124,13 +1169,13 @@ namespace SpaceTimeCut
                 if (isHorizontal)
                 {
                     y -= cutLocation;
-                     times[t].grids[ times[t].grids.Length - 1].Blocks = new int[x, y];
-                     times[t].grids[ times[t].grids.Length - 1].position = position + new Vector2(0, cutLocation *  blocksize);
+                    times[t].grids[times[t].grids.Length - 1].Blocks = new int[x, y];
+                    times[t].grids[times[t].grids.Length - 1].position = position + new Vector2(0, cutLocation * blocksize);
                     times[t].grids[times[t].grids.Length - 1].speed.Y = cutSpeed;
                     for (int i = 0; i < x; i++)
                         for (int b = 0; b < y; b++)
                         {
-                             times[t].grids[ times[t].grids.Length - 1].Blocks[i, b] = Blocks[i, b + cutLocation];
+                            times[t].grids[times[t].grids.Length - 1].Blocks[i, b] = Blocks[i, b + cutLocation];
 
 
                         }
@@ -1147,8 +1192,8 @@ namespace SpaceTimeCut
                 else
                 {
                     x -= cutLocation;
-                     times[t].grids[ times[t].grids.Length - 1].Blocks = new int[x, y];
-                     times[t].grids[ times[t].grids.Length - 1].position = position + new Vector2(cutLocation *  blocksize, 0);
+                    times[t].grids[times[t].grids.Length - 1].Blocks = new int[x, y];
+                    times[t].grids[times[t].grids.Length - 1].position = position + new Vector2(cutLocation * blocksize, 0);
                     times[t].grids[times[t].grids.Length - 1].speed.X = cutSpeed;
                     for (int i = 0; i < x; i++)
                         for (int b = 0; b < y; b++)
@@ -1169,7 +1214,7 @@ namespace SpaceTimeCut
                     entitys[e].Cut(t, index, cutLocation, isHorizontal);
                 }
 
-                times[t].grids[ times[t].grids.Length - 1].GetRect();
+                times[t].grids[times[t].grids.Length - 1].GetRect();
 
 
                 totalCuts++;
@@ -1221,9 +1266,12 @@ namespace SpaceTimeCut
                 for (int y = 0; y < Blocks.GetLength(1); y++)
                 {
                     if (Blocks[x, y] != 0)
-                        _spriteBatch.Draw(Game1.BlocksTexture[Blocks[x, y]], blockRect.Location.ToVector2() + new Vector2(x *  blocksize, y *  blocksize), colorclear);
+                        _spriteBatch.Draw(Game1.BlocksTexture[Blocks[x, y]], blockRect.Location.ToVector2() + new Vector2(x * blocksize, y * blocksize), colorclear);
 
                 }
+            //Draw entitys here so that they get drawn in the right order
+            for (int e = 0; e < entitys.Length; e++)
+                entitys[e].Draw(_spriteBatch, colorclear, t, b);//entitys[e].imageNum, t, b);
 
 
 
@@ -1231,10 +1279,10 @@ namespace SpaceTimeCut
         }
         public void DrawSelected(SpriteBatch _spriteBatch, SpaceTimeLocation selected)
         {
-            Rectangle rect = new Rectangle(blockRect.Location + new Point(selected.X*blocksize,selected.Y*blocksize), new Point (blocksize,blocksize));
+            Rectangle rect = new Rectangle(blockRect.Location + new Point(selected.X * blocksize, selected.Y * blocksize), new Point(blocksize, blocksize));
 
-            Game1.DrawRectangle(_spriteBatch, rect, new Color(0,0,0,50));
-            
+            Game1.DrawRectangle(_spriteBatch, rect, new Color(0, 0, 0, 50));
+
         }
         public void DrawCutLine(SpriteBatch _spriteBatch, Color colorclear)
         {
@@ -1246,75 +1294,83 @@ namespace SpaceTimeCut
         }
 
 
-        public Point CleanUpWallsAndEntitys()//returns player location
+        public void CleanUpWallsAndEntitys()//returns player location
         {
-            int numberOfEntitys = 1; 
+            numberOfEntitys = 1;
             int[,] Newblocks = new int[Blocks.GetLength(0), Blocks.GetLength(1)];
             for (int x = 0; x < Blocks.GetLength(0); x++)
                 for (int y = 0; y < Blocks.GetLength(1); y++)
                 {
                     if (Blocks[x, y] == BARRIER)
                     {
-                        int adjacentNum = 0;
                         int blockNum = 0;
-                        if (x > 0 && Blocks[x - 1, y] == BARRIER)
-                            adjacentNum += 1;
-                        if (y > 0 && Blocks[x, y - 1] == BARRIER)
-                        {
-                            adjacentNum += 1;
+                        if (x > 0 && Blocks[x - 1, y] == BARRIER)//left
                             blockNum += 1;
-                        }
-                        if (x < Blocks.GetLength(0) - 1 && Blocks[x + 1, y] == BARRIER)
+                        if (y > 0 && Blocks[x, y - 1] == BARRIER)//up
                         {
-                            adjacentNum += 1;
                             blockNum += 2;
                         }
-                        if (y < Blocks.GetLength(1) - 1 && Blocks[x, y + 1] == BARRIER)
+                        if (x < Blocks.GetLength(0) - 1 && Blocks[x + 1, y] == BARRIER)//right
                         {
-                            adjacentNum += 1;
                             blockNum += 4;
                         }
-                        if (adjacentNum == 0)
-                            blockNum = 3;
-                        else if (adjacentNum == 2)
-                            blockNum += 4;
-                        else if (adjacentNum == 3)
+                        if (y < Blocks.GetLength(1) - 1 && Blocks[x, y + 1] == BARRIER)//down
+                        {
                             blockNum += 8;
-                        else if (adjacentNum == 4)
-                            blockNum = 12;
+                        }
+
                         Newblocks[x, y] = blockNum;
                     }
-                    else if((Blocks[x, y] >= ENTITYNUM && Blocks[x, y] < ENTITYNUM + 4) || Blocks[x, y] >= MOVEABLEENTITYNUM && Blocks[x, y] < MOVEABLEENTITYNUM + 4|| Blocks[x, y] == MOVABLEWALL)
+                    else if ((Blocks[x, y] >= ENTITYNUM && Blocks[x, y] < ENTITYNUM + 4) || Blocks[x, y] >= MOVEABLEENTITYNUM && Blocks[x, y] < MOVEABLEENTITYNUM + 4 || Blocks[x, y] == MOVABLEWALL|| Blocks[x, y] == VOID)
                     {
                         numberOfEntitys += 1;
                     }
                 }
-            Entity playerEntity = null;
-            Entity[] actualEntitys = new Entity[numberOfEntitys];
-            Entity[] moveableAndPushableEntitys = new Entity[numberOfEntitys];
+            //Entity playerEntity = null;
+            int numberOfPlayerEntitys = 0;
+            Entity[] PlayerEntitys = new Entity[numberOfEntitys];
+            int numberOfMoveableEntitys = 0;
+            Entity[] MoveableEntitys = new Entity[numberOfEntitys];
+            int numberOfPushableEntitys = 0;
+            Entity[] PushableEntitys = new Entity[numberOfEntitys];
             int numberOfmoveableAndPushableEntitys = 0;
-            entitys = new Entity[numberOfEntitys];
-            numberOfEntitys = 0;
-            int numberOfActualEntitys = 0;
-            Point playerCoords = new Point();
+            Entity[] moveableAndPushableEntitys = new Entity[numberOfEntitys];
+            int numberOfVoid = 0;
+            Entity[] VoidEntitys = new Entity[numberOfEntitys];
+            entitys = new EntityType[numberOfEntitys];
+
+
+            //numberOfEntitys = 0;
+           
+
+            //Point playerCoords = new Point();
             for (int x = 0; x < Blocks.GetLength(0); x++)
                 for (int y = 0; y < Blocks.GetLength(1); y++)
                 {
                     if (Blocks[x, y] == BARRIER)
                         Blocks[x, y] = Newblocks[x, y] + FIRSTBARRIERNUM;
+                    else if (Blocks[x, y] == VOID)
+                    {
+                        Blocks[x, y] = 2;
+                        VoidEntitys[numberOfVoid] =new VoidEntity(x, y);
+                        numberOfVoid++;
+
+
+                    }
                     else if (Blocks[x, y] == PLAYERTYPE)
                     {
                         //entitys[PLAYERENTITY] = new Entity(x,y);
-                        playerEntity = new MoveableEntity(x, y,PLAYERTEXTURENUM);
+                        PlayerEntitys[numberOfPlayerEntitys] = new MoveableEntity(x, y, PLAYERTEXTURENUM);
                         Blocks[x, y] = 2;
-                        playerCoords = new Point(x, y);
+                        numberOfPlayerEntitys++;
+                        //playerCoords = new Point(x, y);
                     }
-                    else if(Blocks[x, y] >= ENTITYNUM && Blocks[x, y] < ENTITYNUM+4)
+                    else if (Blocks[x, y] >= ENTITYNUM && Blocks[x, y] < ENTITYNUM + 4)
                     {
-                        actualEntitys[numberOfActualEntitys] = new MoveableEntity(x, y,ENTITYTEXTURENUM, Blocks[x, y] - ENTITYNUM);
+                        MoveableEntitys[numberOfMoveableEntitys] = new MoveableEntity(x, y, ENTITYTEXTURENUM, Blocks[x, y] - ENTITYNUM);
                         //entitys[numberOfEntitys] = new Entity(x,y, Blocks[x, y]-ENTITYNUM);
                         Blocks[x, y] = 2;
-                        numberOfActualEntitys++;
+                        numberOfMoveableEntitys++;
                         //numberOfEntitys++;
                     }
                     else if (Blocks[x, y] >= MOVEABLEENTITYNUM && Blocks[x, y] < MOVEABLEENTITYNUM + 4)
@@ -1328,29 +1384,44 @@ namespace SpaceTimeCut
                     else if (Blocks[x, y] == MOVABLEWALL)
                     {
                         Blocks[x, y] = 2;
-                        entitys[numberOfEntitys] = new PushableEntity(x, y);
-                        numberOfEntitys++;
+                        PushableEntitys[numberOfPushableEntitys] = new PushableEntity(x, y);
+                        numberOfPushableEntitys++;
                     }
 
+
                 }
-            entitys[numberOfEntitys] = playerEntity;
-            PLAYERENTITY = numberOfEntitys;
-            numberOfEntitys++;
-            for (int i = 0; i < numberOfActualEntitys; i++)
+            
+            
+            //numberOfEntitys++;
+            for (int i = 0; i < numberOfVoid; i++)
             {
-                entitys[numberOfEntitys + i] = actualEntitys[i];
+                entitys[i] = new EntityType(VoidEntitys[i]);
+            }
+            for (int i = 0; i < numberOfPushableEntitys; i++)
+            {
+                entitys[i + numberOfVoid] = new EntityType(PushableEntitys[i]);
+            }
+            for (int i = 0; i < numberOfPlayerEntitys; i++)
+            {
+                entitys[i + numberOfVoid+numberOfPushableEntitys] = new EntityType(PlayerEntitys[i]);
+            }
+
+            numberOfEntitys = numberOfVoid + numberOfPlayerEntitys+numberOfPushableEntitys;
+            for (int i = 0; i < numberOfMoveableEntitys; i++)
+            {
+                entitys[numberOfEntitys + i] = new EntityType(MoveableEntitys[i]);
             }
             for (int i = 0; i < numberOfmoveableAndPushableEntitys; i++)
             {
-                entitys[numberOfEntitys + i+numberOfActualEntitys] = moveableAndPushableEntitys[i];
+                entitys[numberOfEntitys + i + numberOfMoveableEntitys] = new EntityType(moveableAndPushableEntitys[i]);
             }
-            originalEntitys = new Entity[entitys.Length];
-            for (int i = 0; i < originalEntitys.Length; i++)
-            {
-                originalEntitys[i] = entitys[i].GetCopy();
-            }
-            return playerCoords;
+            //originalEntitys = new Entity[entitys.Length];
+            //for (int i = 0; i < originalEntitys.Length; i++)
+            //{
+            //    originalEntitys[i] = entitys[i].GetCopy();
+            //}
+            return;// playerCoords;
         }
     }
-    
+
 }

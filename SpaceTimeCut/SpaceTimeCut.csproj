@@ -29,4 +29,7 @@
   <ItemGroup>
     <Compile Remove="Content\Collisions.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Content\NewBlocks\Corruption.xnb" />
+  </ItemGroup>
 </Project>
